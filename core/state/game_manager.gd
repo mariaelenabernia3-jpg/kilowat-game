@@ -239,14 +239,62 @@ func sync_passive_income() -> void:
 			EventBus.currencies_updated.emit(watt, kilowat)
 
 # ====================================================================
-# TALLER MECÁNICO Y PIEZAS
+# TALLER MECÁNICO Y PIEZAS (BLINDADO PARA PARCHE .PCK)
 # ====================================================================
 
-func get_part_quantity(part_type: String, part_level: int) -> int:
+## Suma las piezas ganadas en memoria inmediatamente
+func add_part_locally(part_type: String, part_level: int, qty: int) -> void:
+	var clean_type = part_type.strip_edges().to_lower()
+	var found = false
 	for p in player_parts:
-		if str(p.get("part_type", "")) == part_type and int(p.get("part_level", 0)) == part_level:
+		var p_t = str(p.get("part_type", "")).strip_edges().to_lower()
+		var p_l = int(p.get("part_level", p.get("level", 0)))
+		if p_t == clean_type and p_l == part_level:
+			p["quantity"] = int(p.get("quantity", 0)) + qty
+			found = true
+			break
+	if not found:
+		player_parts.append({
+			"part_type": clean_type,
+			"part_level": part_level,
+			"quantity": qty
+		})
+
+## Descuenta piezas en memoria al reparar o mejorar
+func deduct_part_locally(part_type: String, part_level: int, qty: int) -> void:
+	var clean_type = part_type.strip_edges().to_lower()
+	for p in player_parts:
+		var p_t = str(p.get("part_type", "")).strip_edges().to_lower()
+		var p_l = int(p.get("part_level", p.get("level", 0)))
+		if p_t == clean_type and p_l == part_level:
+			p["quantity"] = maxi(0, int(p.get("quantity", 0)) - qty)
+			break
+
+## Búsqueda flexible insensible a mayúsculas
+func get_part_quantity(part_type: String, part_level: int) -> int:
+	var target_type = part_type.strip_edges().to_lower()
+	for p in player_parts:
+		var p_t = str(p.get("part_type", "")).strip_edges().to_lower()
+		var p_l = int(p.get("part_level", p.get("level", 0)))
+		if p_t == target_type and p_l == part_level:
 			return int(p.get("quantity", 0))
 	return 0
+
+## Carga directa desde la tabla player_parts de Supabase con fallback a RPC
+func load_player_parts() -> void:
+	var uid = SupabaseClient.current_user_id
+	if uid == "": return
+
+	# 1. Consulta REST directa (rápida y estándar)
+	var res = await SupabaseClient.send_request("/rest/v1/player_parts?user_id=eq." + uid + "&select=*&quantity=gt.0", HTTPClient.METHOD_GET, {}, true)
+	if res.get("success", false) and typeof(res.get("data")) == TYPE_ARRAY:
+		player_parts = res["data"]
+		return
+
+	# 2. Fallback por RPC
+	var res_rpc = await SupabaseClient.send_request("/rest/v1/rpc/get_player_parts", HTTPClient.METHOD_POST, {}, true)
+	if res_rpc.get("success", false) and typeof(res_rpc.get("data")) == TYPE_DICTIONARY:
+		player_parts = res_rpc["data"].get("parts", [])
 
 func repair_generator_secure(gen_db_id: String) -> Dictionary:
 	var gen: Dictionary = {}
@@ -269,12 +317,13 @@ func repair_generator_secure(gen_db_id: String) -> Dictionary:
 	elif gtype in ["ecoflow_spark_plus", "delta_mini", "panel_solar"]:
 		req_cable_lvl = 2; req_cable_qty = 8; req_vent_lvl = 2; req_vent_qty = 5
 
-	# 🔒 Candado Cliente: Bloqueo estricto
 	if get_part_quantity("cable", req_cable_lvl) < req_cable_qty or get_part_quantity("ventilador", req_vent_lvl) < req_vent_qty:
 		return {"success": false, "error": "No tienes suficientes piezas para reparar esta planta."}
 
 	var res = await SupabaseClient.send_request("/rest/v1/rpc/repair_generator", HTTPClient.METHOD_POST, {"p_gen_id": gen_db_id}, true)
 	if res.get("success", false) and res.get("data", {}).get("success", false):
+		deduct_part_locally("cable", req_cable_lvl, req_cable_qty)
+		deduct_part_locally("ventilador", req_vent_lvl, req_vent_qty)
 		await load_player_inventory()
 		return {"success": true}
 	var err = res.get("data", {}).get("error", "Error al reparar generador")
@@ -300,12 +349,14 @@ func upgrade_generator_secure(gen_db_id: String) -> Dictionary:
 	var req_v = 15
 	var req_p = 10 if target_lvl < 4 else 12
 
-	# 🔒 Candado Cliente: Bloqueo estricto
 	if get_part_quantity("cable", req_part_lvl) < req_c or get_part_quantity("ventilador", req_part_lvl) < req_v or get_part_quantity("panel", req_part_lvl) < req_p:
 		return {"success": false, "error": "Piezas insuficientes para subir a Nivel %d." % target_lvl}
 
 	var res = await SupabaseClient.send_request("/rest/v1/rpc/upgrade_generator_level", HTTPClient.METHOD_POST, {"p_gen_id": gen_db_id}, true)
 	if res.get("success", false) and res.get("data", {}).get("success", false):
+		deduct_part_locally("cable", req_part_lvl, req_c)
+		deduct_part_locally("ventilador", req_part_lvl, req_v)
+		deduct_part_locally("panel", req_part_lvl, req_p)
 		await load_player_inventory()
 		return {"success": true, "new_level": int(res["data"].get("new_level", target_lvl))}
 	var err = res.get("data", {}).get("error", "Error al subir de nivel")

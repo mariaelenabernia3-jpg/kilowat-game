@@ -31,6 +31,11 @@ func open_modal() -> void:
 	current_tab = "repair"
 	_set_zoom(1.0)
 	_refresh_view()
+	
+	# Sincronizar en segundo plano con el servidor y redibujar si llegaron piezas nuevas
+	await GameManager.load_player_parts()
+	if visible:
+		_refresh_view()
 
 func _input(event: InputEvent) -> void:
 	if not visible: return
