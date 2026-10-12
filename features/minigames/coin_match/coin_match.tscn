@@ -1,0 +1,214 @@
+[gd_scene format=3 uid="uid://cg84nstiu4b8o"]
+
+[ext_resource type="Script" path="res://features/minigames/coin_match/coin_match.gd" id="1_cmatch"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_board_bg"]
+bg_color = Color(0.08, 0.1, 0.15, 0.88)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.25, 0.45, 0.75, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.1, 0.3, 0.6, 0.3)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.09, 0.11, 0.16, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.15, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 0.75, 0, 0.35)
+shadow_size = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cyan_btn"]
+bg_color = Color(0.15, 0.75, 0.95, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.5, 0.9, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="CoinMatchGame" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cmatch")
+
+[node name="BackgroundTexture" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PlayArea" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="BoardContainer" type="PanelContainer" parent="PlayArea"]
+layout_mode = 0
+offset_left = 416.0
+offset_top = 160.0
+offset_right = 864.0
+offset_bottom = 608.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_board_bg")
+
+[node name="HighlightRect" type="ReferenceRect" parent="PlayArea"]
+visible = false
+layout_mode = 0
+offset_right = 64.0
+offset_bottom = 64.0
+mouse_filter = 2
+border_color = Color(1, 0.9, 0.2, 1)
+border_width = 3.0
+editor_only = false
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="TopPanel" type="PanelContainer" parent="HUD"]
+custom_minimum_size = Vector2(0, 64)
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+
+[node name="Margin" type="MarginContainer" parent="HUD/TopPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+
+[node name="HBox" type="HBoxContainer" parent="HUD/TopPanel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 25
+
+[node name="ScoreBox" type="HBoxContainer" parent="HUD/TopPanel/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ScoreLabel" type="Label" parent="HUD/TopPanel/Margin/HBox/ScoreBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 20
+text = "PUNTOS: 0 / 1000"
+
+[node name="LevelLabel" type="Label" parent="HUD/TopPanel/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "DIFICULTAD: 1"
+
+[node name="Spacer" type="Control" parent="HUD/TopPanel/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TimeBox" type="HBoxContainer" parent="HUD/TopPanel/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TimeIcon" type="Label" parent="HUD/TopPanel/Margin/HBox/TimeBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "⏳"
+
+[node name="TimerLabel" type="Label" parent="HUD/TopPanel/Margin/HBox/TimeBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "00:45"
+
+[node name="ExitButton" type="Button" parent="HUD/TopPanel/Margin/HBox"]
+custom_minimum_size = Vector2(100, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+text = "Salir"
+
+[node name="ResultDialog" type="PanelContainer" parent="HUD"]
+visible = false
+custom_minimum_size = Vector2(420, 240)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -120.0
+offset_right = 210.0
+offset_bottom = 120.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Margin" type="MarginContainer" parent="HUD/ResultDialog"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="HUD/ResultDialog/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="HUD/ResultDialog/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "¡VICTORIA!"
+horizontal_alignment = 1
+
+[node name="Message" type="Label" parent="HUD/ResultDialog/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+text = "+0.000000001 KWP obtenido"
+horizontal_alignment = 1
+
+[node name="CooldownLabel" type="Label" parent="HUD/ResultDialog/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8, 0.3, 1)
+theme_override_font_sizes/font_size = 12
+text = "Espera 5s para la siguiente partida"
+horizontal_alignment = 1
+
+[node name="ButtonsHBox" type="HBoxContainer" parent="HUD/ResultDialog/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ActionButton" type="Button" parent="HUD/ResultDialog/Margin/VBox/ButtonsHBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+text = "Continuar"
+
+[node name="RetryButton" type="Button" parent="HUD/ResultDialog/Margin/VBox/ButtonsHBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.04, 0.08, 0.12, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_cyan_btn")
+text = "Volver a Jugar"

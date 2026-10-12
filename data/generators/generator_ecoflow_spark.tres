@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GeneratorData" format=3]
+
+[ext_resource type="Script" path="res://data/definitions/generator_data.gd" id="1_gen"]
+[ext_resource type="Texture2D" path="res://assets/sprites/generators/ecoflow_spark.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_gen")
+id = "ecoflow_spark"
+name = "EcoFlow Spark"
+level = 1
+rarity = "Común"
+item_type = "EcoFlow"
+description = "«Batería portátil compacta (Máx 4 por cuenta): 0.000000050 kW/min continuos.»"
+slots_required = 1
+is_purchasable = true
+cost_watt = 0.5
+cost_kilowat = 0.0
+power_kwp = 5.0e-08
+cycle_time_seconds = 60.0
+reward_kilowat = 5.0e-08
+texture = ExtResource("2_tex")

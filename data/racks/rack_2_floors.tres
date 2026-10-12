@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="RackData" format=3]
+
+[ext_resource type="Script" path="res://data/definitions/rack_data.gd" id="1_rack"]
+[ext_resource type="Texture2D" path="res://assets/sprites/racks/racks2.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_rack")
+id = "rack_2_floors"
+name = "Estantería de 2 Pisos"
+floors = 2
+total_slots = 4
+price_watt = 1.0
+price_kilowat = 0.0
+texture = ExtResource("2_tex")

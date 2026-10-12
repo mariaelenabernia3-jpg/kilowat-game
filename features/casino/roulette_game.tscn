@@ -1,0 +1,254 @@
+[gd_scene format=3 uid="uid://dlqohl3ini8xi"]
+
+[ext_resource type="Script" uid="uid://cvauvw72l2inq" path="res://features/casino/roulette_game.gd" id="1_roul"]
+[ext_resource type="Texture2D" uid="uid://c7pvtqts3faj8" path="res://assets/sprites/ui/icon_chip.png" id="2_chip"]
+[ext_resource type="Texture2D" uid="uid://qsj8sh8c1wq1" path="res://assets/sprites/ui/icon_watt.png" id="3_watt"]
+[ext_resource type="Texture2D" uid="uid://ccmry72o5nhug" path="res://assets/sprites/ui/icon_kilowat.png" id="4_kilo"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+bg_color = Color(0.06, 0.08, 0.12, 0.98)
+border_width_bottom = 2
+border_color = Color(0.18, 0.65, 0.85, 0.8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_chip"]
+bg_color = Color(0.18, 0.08, 0.16, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.45, 0.85, 0.8)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+bg_color = Color(0.1, 0.13, 0.18, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.35, 0.55, 0.7)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.07, 0.09, 0.14, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.8, 0.2, 0.8)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+shadow_color = Color(1, 0.7, 0, 0.2)
+shadow_size = 14
+
+[node name="RouletteGame" type="Control" unique_id=2002322015]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_roul")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1055973366]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.07, 1)
+
+[node name="CanvasLayerUI" type="CanvasLayer" parent="." unique_id=2029264465]
+
+[node name="MainVBox" type="VBoxContainer" parent="CanvasLayerUI" unique_id=757966205]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="TopBar" type="PanelContainer" parent="CanvasLayerUI/MainVBox" unique_id=1568651803]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar" unique_id=1030877864]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin" unique_id=911890195]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BackButton" type="Button" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox" unique_id=1238767109]
+custom_minimum_size = Vector2(160, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+text = "← Volver al Casino"
+
+[node name="Title" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox" unique_id=749067083]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 18
+text = "🎡 RULETA ELÉCTRICA DE LA FORTUNA"
+
+[node name="Spacer" type="Control" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox" unique_id=1238436964]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatsBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox" unique_id=1034079675]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ChipPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox" unique_id=1554298287]
+custom_minimum_size = Vector2(140, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill_chip")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill" unique_id=1747313275]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin" unique_id=253037547]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin/HBox" unique_id=487179529]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+texture = ExtResource("2_chip")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChipLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin/HBox" unique_id=975533102]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.95, 1)
+theme_override_font_sizes/font_size = 14
+text = "0"
+
+[node name="WattPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox" unique_id=1154029243]
+custom_minimum_size = Vector2(140, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill" unique_id=1814583152]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin" unique_id=2118745150]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin/HBox" unique_id=30251265]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+texture = ExtResource("3_watt")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WattLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin/HBox" unique_id=1927723554]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 14
+text = "0.0000"
+
+[node name="KiloPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox" unique_id=2015817247]
+custom_minimum_size = Vector2(150, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill" unique_id=223534633]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin" unique_id=1568008033]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin/HBox" unique_id=330737617]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+texture = ExtResource("4_kilo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KiloLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin/HBox" unique_id=199311671]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "0.000000"
+
+[node name="Body" type="CenterContainer" parent="CanvasLayerUI/MainVBox" unique_id=1783320601]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayerUI/MainVBox/Body" unique_id=2038874826]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="StatusToast" type="Label" parent="CanvasLayerUI/MainVBox/Body/VBox" unique_id=580119701]
+custom_minimum_size = Vector2(0, 26)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+horizontal_alignment = 1
+
+[node name="WheelArea" type="PanelContainer" parent="CanvasLayerUI/MainVBox/Body/VBox" unique_id=1144981959]
+custom_minimum_size = Vector2(400, 390)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Center" type="CenterContainer" parent="CanvasLayerUI/MainVBox/Body/VBox/WheelArea" unique_id=1283812184]
+layout_mode = 2
+
+[node name="WheelContainer" type="Control" parent="CanvasLayerUI/MainVBox/Body/VBox/WheelArea/Center" unique_id=1127425318]
+custom_minimum_size = Vector2(360, 360)
+layout_mode = 2
+
+[node name="Indicator" type="Label" parent="CanvasLayerUI/MainVBox/Body/VBox/WheelArea" unique_id=1008961674]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_override_colors/font_color = Color(1, 0.25, 0.25, 1)
+theme_override_font_sizes/font_size = 28
+text = "▼"
+horizontal_alignment = 1
+
+[node name="ControlsBox" type="VBoxContainer" parent="CanvasLayerUI/MainVBox/Body/VBox" unique_id=1966143007]
+layout_mode = 2
+theme_override_constants/separation = 6
+alignment = 1
+
+[node name="SpinButton" type="Button" parent="CanvasLayerUI/MainVBox/Body/VBox/ControlsBox" unique_id=1546961888]
+custom_minimum_size = Vector2(280, 48)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+theme_override_font_sizes/font_size = 15
+text = "⚡ GIRAR LA RULETA"
+
+[node name="FreeTimerLabel" type="Label" parent="CanvasLayerUI/MainVBox/Body/VBox/ControlsBox" unique_id=1172638387]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1

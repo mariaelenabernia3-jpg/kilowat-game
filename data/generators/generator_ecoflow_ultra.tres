@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GeneratorData" format=3]
+
+[ext_resource type="Script" path="res://data/definitions/generator_data.gd" id="1_gen"]
+[ext_resource type="Texture2D" path="res://assets/sprites/generators/ecoflow_ultra.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_gen")
+id = "ecoflow_ultra"
+name = "EcoFlow Ultra"
+level = 1
+rarity = "Legendario"
+item_type = "EcoFlow"
+description = "«Almacenamiento masivo industrial: 0.000000600 kW/min ininterrumpidos.»"
+slots_required = 1
+is_purchasable = true
+cost_watt = 0.0
+cost_kilowat = 0.80
+power_kwp = 6.0e-07
+cycle_time_seconds = 60.0
+reward_kilowat = 6.0e-07
+texture = ExtResource("2_tex")

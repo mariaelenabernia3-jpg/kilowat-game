@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://gv7vnjp665xq"]
+
+[ext_resource type="Script" path="res://features/room/grid/room_grid.gd" id="1_rgrid"]
+
+[node name="RoomGrid" type="Node2D"]
+script = ExtResource("1_rgrid")
+show_guides = true
+
+[node name="CustomMarkers" type="Node2D" parent="."]
+
+# FILA 1 (Superior: 3 Estantes)
+[node name="Slot0" type="Marker2D" parent="CustomMarkers"]
+position = Vector2(480, 360)
+gizmo_extents = 20.0
+
+[node name="Slot1" type="Marker2D" parent="CustomMarkers"]
+position = Vector2(670, 360)
+gizmo_extents = 20.0
+
+[node name="Slot2" type="Marker2D" parent="CustomMarkers"]
+position = Vector2(860, 360)
+gizmo_extents = 20.0
+
+# FILA 2 (Inferior: 3 Estantes)
+[node name="Slot3" type="Marker2D" parent="CustomMarkers"]
+position = Vector2(480, 600)
+gizmo_extents = 20.0
+
+[node name="Slot4" type="Marker2D" parent="CustomMarkers"]
+position = Vector2(670, 600)
+gizmo_extents = 20.0
+
+[node name="Slot5" type="Marker2D" parent="CustomMarkers"]
+position = Vector2(860, 600)
+gizmo_extents = 20.0
+
+[node name="SlotsContainer" type="Node2D" parent="."]

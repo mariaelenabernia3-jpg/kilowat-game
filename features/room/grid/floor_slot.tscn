@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://cfloorslot001"]
+
+[ext_resource type="Script" path="res://features/room/grid/floor_slot.gd" id="1_slot"]
+
+[node name="FloorSlot" type="Control"]
+custom_minimum_size = Vector2(140, 220)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 140.0
+offset_bottom = 220.0
+mouse_filter = 1
+script = ExtResource("1_slot")
+
+[node name="SlotBorder" type="ReferenceRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+border_color = Color(0.3, 0.7, 0.3, 0.3)
+border_width = 1.5
+editor_only = false
+
+[node name="ClickButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_default_cursor_shape = 2
+flat = true
+
+[node name="RackContainer" type="Marker2D" parent="."]
+position = Vector2(70, 220)

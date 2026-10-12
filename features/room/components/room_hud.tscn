@@ -1,0 +1,192 @@
+[gd_scene format=3 uid="uid://croomhud001"]
+
+[ext_resource type="Script" path="res://features/room/components/room_hud.gd" id="1_rhud"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_watt.png" id="2_watt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_kilowat.png" id="3_kilo"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_chip.png" id="4_chip"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+bg_color = Color(0.06, 0.08, 0.12, 0.98)
+border_width_bottom = 2
+border_color = Color(0.18, 0.65, 0.85, 0.8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+bg_color = Color(0.1, 0.13, 0.18, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.35, 0.55, 0.7)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[node name="RoomHUD" type="PanelContainer"]
+custom_minimum_size = Vector2(0, 68)
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
+script = ExtResource("1_rhud")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+
+[node name="HBox" type="HBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PlayerLabel" type="Label" parent="Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 15
+text = "Operador: -"
+
+[node name="StatsBox" type="HBoxContainer" parent="Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="PowerPill" type="PanelContainer" parent="Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(170, 36)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="Margin/HBox/StatsBox/PowerPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_right = 10
+
+[node name="HBox" type="HBoxContainer" parent="Margin/HBox/StatsBox/PowerPill/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="Icon" type="Label" parent="Margin/HBox/StatsBox/PowerPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.88, 1, 1)
+text = "⚡"
+
+[node name="PowerLabel" type="Label" parent="Margin/HBox/StatsBox/PowerPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 12
+text = "0.000000000 KWP"
+
+[node name="WattPill" type="PanelContainer" parent="Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(125, 36)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="Margin/HBox/StatsBox/WattPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 8
+
+[node name="HBox" type="HBoxContainer" parent="Margin/HBox/StatsBox/WattPill/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Margin/HBox/StatsBox/WattPill/Margin/HBox"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("2_watt")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WattLabel" type="Label" parent="Margin/HBox/StatsBox/WattPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 12
+text = "0.0000"
+
+[node name="KiloPill" type="PanelContainer" parent="Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(135, 36)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="Margin/HBox/StatsBox/KiloPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 8
+
+[node name="HBox" type="HBoxContainer" parent="Margin/HBox/StatsBox/KiloPill/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Margin/HBox/StatsBox/KiloPill/Margin/HBox"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("3_kilo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KiloLabel" type="Label" parent="Margin/HBox/StatsBox/KiloPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 12
+text = "0.000000"
+
+[node name="ChipPill" type="PanelContainer" parent="Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(110, 36)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="Margin/HBox/StatsBox/ChipPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_right = 8
+
+[node name="HBox" type="HBoxContainer" parent="Margin/HBox/StatsBox/ChipPill/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Margin/HBox/StatsBox/ChipPill/Margin/HBox"]
+custom_minimum_size = Vector2(20, 20)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4_chip")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChipLabel" type="Label" parent="Margin/HBox/StatsBox/ChipPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.95, 1)
+theme_override_font_sizes/font_size = 12
+text = "0"
+
+[node name="Spacer" type="Control" parent="Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ActionsBox" type="HBoxContainer" parent="Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SplitPowerBtn" type="Button" parent="Margin/HBox/ActionsBox"]
+custom_minimum_size = Vector2(90, 36)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+text = "⚡ Minar"
+
+[node name="ExtractBtn" type="Button" parent="Margin/HBox/ActionsBox"]
+custom_minimum_size = Vector2(95, 36)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+text = "💵 Extraer"
+
+[node name="LogoutButton" type="Button" parent="Margin/HBox/ActionsBox"]
+custom_minimum_size = Vector2(80, 36)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+text = "Salir"

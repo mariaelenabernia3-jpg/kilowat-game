@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GeneratorData" format=3]
+
+[ext_resource type="Script" path="res://data/definitions/generator_data.gd" id="1_gen"]
+[ext_resource type="Texture2D" path="res://assets/sprites/generators/plantalevel1.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_gen")
+id = "planta_meme"
+name = "Planta Meme"
+level = 1
+rarity = "EXCLUSIVA DEBUT"
+item_type = "Meme"
+description = "«No genera electricidad. Bueno... técnicamente genera un poquito: 0.000000005 kW/min.»"
+slots_required = 1
+is_purchasable = false
+cost_watt = 0.0
+cost_kilowat = 0.0
+power_kwp = 5e-09
+cycle_time_seconds = 60.0
+reward_kilowat = 5e-09
+texture = ExtResource("2_tex")

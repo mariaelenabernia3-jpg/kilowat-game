@@ -1,0 +1,15 @@
+# Cache interna y compilación de Godot (NO SUBIR)
+.godot/
+*.translation
+
+# Archivos de exportación y ejecutables
+builds/
+*.apk
+*.aab
+*.exe
+*.pck
+
+# Archivos de sesión local y temporales
+user/
+*.log
+*.tmp

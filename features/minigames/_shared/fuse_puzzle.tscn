@@ -1,0 +1,102 @@
+[gd_scene format=3 uid="uid://f1uisj7ukemi"]
+
+[ext_resource type="Script" path="res://features/minigames/_shared/fuse_puzzle.gd" id="1_fuse"]
+
+[node name="FusePuzzle" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fuse")
+
+[node name="Overlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.03, 0.04, 0.06, 0.9)
+
+[node name="Panel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(420, 310)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -155.0
+offset_right = 210.0
+offset_bottom = 155.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+theme_override_font_sizes/font_size = 15
+text = "⚠️ SOBRECARGA EN LA CAJA DE FUSIBLES"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.8, 0.9, 1)
+theme_override_font_sizes/font_size = 12
+text = "Corta el cable del mismo color que el núcleo de energía:"
+horizontal_alignment = 1
+
+[node name="SvgTextureRect" type="TextureRect" parent="Panel/Margin/VBox"]
+custom_minimum_size = Vector2(340, 75)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TimerLabel" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+theme_override_font_sizes/font_size = 12
+text = "⏳ Tiempo restante: 10s"
+horizontal_alignment = 1
+
+[node name="WiresContainer" type="HBoxContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="WireBlue" type="Button" parent="Panel/Margin/VBox/WiresContainer"]
+custom_minimum_size = Vector2(105, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0, 0.9, 1, 1)
+text = "⚡ CABLE AZUL"
+
+[node name="WireRed" type="Button" parent="Panel/Margin/VBox/WiresContainer"]
+custom_minimum_size = Vector2(105, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 0.3, 0.3, 1)
+text = "⚡ CABLE ROJO"
+
+[node name="WireYellow" type="Button" parent="Panel/Margin/VBox/WiresContainer"]
+custom_minimum_size = Vector2(105, 48)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.2, 1)
+text = "⚡ CABLE AMARILLO"

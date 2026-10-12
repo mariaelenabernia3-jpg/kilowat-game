@@ -1,0 +1,364 @@
+[gd_scene format=3 uid="uid://casi0nohub001"]
+
+[ext_resource type="Script" path="res://features/casino/mines/casino_hub.gd" id="1_chub"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_chip.png" id="2_chip"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_watt.png" id="3_watt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_kilowat.png" id="4_kilo"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+bg_color = Color(0.06, 0.08, 0.12, 0.98)
+border_width_bottom = 2
+border_color = Color(0.18, 0.65, 0.85, 0.8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill_chip"]
+bg_color = Color(0.18, 0.08, 0.16, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.45, 0.85, 0.8)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+bg_color = Color(0.1, 0.13, 0.18, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.35, 0.55, 0.7)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_hero"]
+bg_color = Color(0.08, 0.10, 0.15, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.45, 0.85, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0.9, 0.2, 0.7, 0.25)
+shadow_size = 10
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_disabled"]
+bg_color = Color(0.06, 0.08, 0.11, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.25, 0.35, 0.5)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_play"]
+bg_color = Color(0.85, 0.15, 0.55, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.55, 0.85, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.9, 0.2, 0.6, 0.35)
+shadow_size = 8
+
+[node name="CasinoHub" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_chub")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.07, 1)
+
+[node name="CanvasLayerUI" type="CanvasLayer" parent="."]
+
+[node name="MainVBox" type="VBoxContainer" parent="CanvasLayerUI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="TopBar" type="PanelContainer" parent="CanvasLayerUI/MainVBox"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="BackButton" type="Button" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox"]
+custom_minimum_size = Vector2(160, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+text = "← Volver al Cuarto"
+
+[node name="Title" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.45, 0.85, 1)
+theme_override_font_sizes/font_size = 18
+text = "🎰 SALA DE CASINO & APUESTAS"
+
+[node name="Spacer" type="Control" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatsBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ChipPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(150, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill_chip")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin/HBox"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("2_chip")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChipLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.95, 1)
+theme_override_font_sizes/font_size = 15
+text = "0"
+
+[node name="WattPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(130, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin/HBox"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("3_watt")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WattLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 13
+text = "0.0000"
+
+[node name="KiloPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(140, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin/HBox"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4_kilo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KiloLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 13
+text = "0.000000"
+
+[node name="ContentScroll" type="ScrollContainer" parent="CanvasLayerUI/MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/ContentScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 28
+
+[node name="GamesHBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 28
+alignment = 1
+
+[node name="MinesCard" type="PanelContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox"]
+custom_minimum_size = Vector2(560, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_hero")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="BadgeRow" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="Badge" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox/BadgeRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.45, 0.85, 1)
+theme_override_font_sizes/font_size = 12
+text = "★ JUEGO DE APUESTAS DESTACADO"
+
+[node name="Title" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.98, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "💣 MINAS (MINES CASINO)"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.82, 0.92, 0.9)
+theme_override_font_sizes/font_size = 14
+text = "Descubre diamantes y retira tus ganancias antes de activar una mina. Configura de 2 a 24 minas en un tablero 5x5."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="StatsBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="LimitLabel" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox/StatsBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.55, 1)
+theme_override_font_sizes/font_size = 13
+text = "🪙 Apuesta mínima: 1 Ficha"
+
+[node name="Dot" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox/StatsBox"]
+layout_mode = 2
+text = "•"
+
+[node name="MultiLabel" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox/StatsBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 13
+text = "⚡ Retiro voluntario en cada paso"
+
+[node name="Spacer" type="Control" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BtnPlayMines" type="Button" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/MinesCard/Margin/VBox"]
+custom_minimum_size = Vector2(280, 52)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(1, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_play")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_play")
+text = "⚡ ENTRAR A LA SALA DE MINAS"
+
+[node name="UpcomingCard" type="PanelContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox"]
+custom_minimum_size = Vector2(440, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_disabled")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/UpcomingCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 24
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/UpcomingCard/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Badge" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/UpcomingCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 12
+text = "🔒 EN DESARROLLO"
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/UpcomingCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 22
+text = "🎡 RULETA ELÉCTRICA"
+horizontal_alignment = 1
+
+[node name="Desc" type="Label" parent="CanvasLayerUI/MainVBox/ContentScroll/Margin/GamesHBox/UpcomingCard/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.55, 0.65, 0.8)
+theme_override_font_sizes/font_size = 13
+text = "Próximamente: gira la ruleta de bobinas para multiplicar tus fichas o ganar piezas de recambio exclusivas para tus plantas."
+horizontal_alignment = 1
+autowrap_mode = 2

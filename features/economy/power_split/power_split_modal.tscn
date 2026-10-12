@@ -1,0 +1,205 @@
+[gd_scene format=3 uid="uid://psplitmodal001"]
+
+[ext_resource type="Script" path="res://features/economy/power_split/power_split_modal.gd" id="1_split"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_watt.png" id="2_watt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_kilowat.png" id="3_kilo"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.09, 0.11, 0.16, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.15, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(1, 0.75, 0, 0.35)
+shadow_size = 14
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gold_btn"]
+bg_color = Color(1, 0.82, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.6, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="PowerSplitModal" type="Control"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_split")
+
+[node name="DarkOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.03, 0.05, 0.9)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(560, 440)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 22
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "⚡ CALIBRADOR DE FLUJO ELÉCTRICO"
+horizontal_alignment = 1
+
+[node name="Info" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.85)
+theme_override_font_sizes/font_size = 12
+text = "Distribuye el porcentaje de energía que generarán tus plantas. Al ser WATT una moneda blanda interna, se mina a un ritmo 1,000 veces mayor que el Kilowat."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="GaugeRow" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="WattGauge" type="PanelContainer" parent="Center/Panel/Margin/VBox/GaugeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel/Margin/VBox/GaugeRow/WattGauge"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin/VBox/GaugeRow/WattGauge/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="Center/Panel/Margin/VBox/GaugeRow/WattGauge/Margin/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Center/Panel/Margin/VBox/GaugeRow/WattGauge/Margin/VBox/HBox"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("2_watt")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WattPercent" type="Label" parent="Center/Panel/Margin/VBox/GaugeRow/WattGauge/Margin/VBox/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 16
+text = "50% WATT"
+
+[node name="Sub" type="Label" parent="Center/Panel/Margin/VBox/GaugeRow/WattGauge/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 10
+text = "RITMO RÁPIDO (x1,000)"
+horizontal_alignment = 1
+
+[node name="KiloGauge" type="PanelContainer" parent="Center/Panel/Margin/VBox/GaugeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel/Margin/VBox/GaugeRow/KiloGauge"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 10
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin/VBox/GaugeRow/KiloGauge/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="HBox" type="HBoxContainer" parent="Center/Panel/Margin/VBox/GaugeRow/KiloGauge/Margin/VBox"]
+layout_mode = 2
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="Center/Panel/Margin/VBox/GaugeRow/KiloGauge/Margin/VBox/HBox"]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+texture = ExtResource("3_kilo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KiloPercent" type="Label" parent="Center/Panel/Margin/VBox/GaugeRow/KiloGauge/Margin/VBox/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 16
+text = "50% KILOWAT"
+
+[node name="Sub" type="Label" parent="Center/Panel/Margin/VBox/GaugeRow/KiloGauge/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.7, 0.8, 1)
+theme_override_font_sizes/font_size = 10
+text = "MONEDA DE RETIRO (1:1)"
+horizontal_alignment = 1
+
+[node name="SliderBox" type="MarginContainer" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_right = 16
+
+[node name="SplitSlider" type="HSlider" parent="Center/Panel/Margin/VBox/SliderBox"]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+step = 10.0
+value = 50.0
+
+[node name="CooldownLabel" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "✓ Circuito disponible para ajuste."
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="CloseBtn" type="Button" parent="Center/Panel/Margin/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+text = "✕ Cancelar"
+
+[node name="SaveBtn" type="Button" parent="Center/Panel/Margin/VBox/Buttons"]
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.08, 0.06, 0.01, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_gold_btn")
+text = "⚡ CALIBRAR Y GUARDAR"

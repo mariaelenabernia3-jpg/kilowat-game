@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GeneratorData" format=3]
+
+[ext_resource type="Script" path="res://data/definitions/generator_data.gd" id="1_gen"]
+[ext_resource type="Texture2D" path="res://assets/sprites/generators/cyber_tank.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_gen")
+id = "cyber_tank"
+name = "Cyber Tank 100%"
+level = 1
+rarity = "EDICIÓN ESPECIAL LIMITADA"
+item_type = "Generador Cuántico"
+description = "«Batería pesada de plasma continuo y blindaje (Límite 1): 0.000000900 kW/min continuos.»"
+slots_required = 1
+is_purchasable = true
+cost_watt = 0.0
+cost_kilowat = 1.00
+power_kwp = 9.0e-07
+cycle_time_seconds = 60.0
+reward_kilowat = 9.0e-07
+texture = ExtResource("2_tex")

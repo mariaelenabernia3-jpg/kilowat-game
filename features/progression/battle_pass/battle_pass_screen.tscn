@@ -1,0 +1,450 @@
+[gd_scene format=3 uid="uid://dkv1kf2y7d441"]
+
+[ext_resource type="Script" path="res://features/progression/battle_pass/battle_pass_screen.gd" id="1_bps"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_watt.png" id="2_watt"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_kilowat.png" id="3_kilo"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_chip.png" id="4_chip"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+bg_color = Color(0.06, 0.08, 0.12, 0.98)
+border_width_bottom = 2
+border_color = Color(0.18, 0.65, 0.85, 0.8)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_pill"]
+bg_color = Color(0.1, 0.13, 0.18, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.35, 0.55, 0.7)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gold_btn"]
+bg_color = Color(1, 0.82, 0.15, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.95, 0.6, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(1, 0.75, 0, 0.35)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+bg_color = Color(0.09, 0.11, 0.16, 0.98)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(1, 0.82, 0.15, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[node name="BattlePassScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_bps")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.04, 0.05, 0.07, 1)
+
+[node name="CanvasLayerUI" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="MainVBox" type="VBoxContainer" parent="CanvasLayerUI"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="TopBar" type="PanelContainer" parent="CanvasLayerUI/MainVBox"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="CloseButton" type="Button" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox"]
+custom_minimum_size = Vector2(160, 38)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+text = "← Volver al Cuarto"
+
+[node name="Title" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "🎖️ PASE DE TEMPORADA — TEMPORADA 1"
+
+[node name="Spacer" type="Control" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatsBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ChipPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(130, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin/HBox"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("4_chip")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ChipLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/ChipPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.55, 0.95, 1)
+theme_override_font_sizes/font_size = 13
+text = "0"
+
+[node name="WattPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(140, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin/HBox"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("2_watt")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="WattLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/WattPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.95, 0.55, 1)
+theme_override_font_sizes/font_size = 13
+text = "0.0000"
+
+[node name="KiloPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox"]
+custom_minimum_size = Vector2(150, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 14
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="Icon" type="TextureRect" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin/HBox"]
+custom_minimum_size = Vector2(22, 22)
+layout_mode = 2
+size_flags_vertical = 4
+texture = ExtResource("3_kilo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KiloLabel" type="Label" parent="CanvasLayerUI/MainVBox/TopBar/Margin/HBox/StatsBox/KiloPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 13
+text = "0.000000"
+
+[node name="SeasonHeader" type="PanelContainer" parent="CanvasLayerUI/MainVBox"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/SeasonHeader"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_right = 24
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="LevelPill" type="PanelContainer" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin/HBox"]
+custom_minimum_size = Vector2(140, 38)
+layout_mode = 2
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_pill")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin/HBox/LevelPill"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_right = 12
+
+[node name="HBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin/HBox/LevelPill/Margin"]
+layout_mode = 2
+alignment = 1
+
+[node name="LevelLabel" type="Label" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin/HBox/LevelPill/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "NIVEL 1 / 20"
+
+[node name="XPBox" type="VBoxContainer" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="XPProgressBar" type="ProgressBar" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin/HBox/XPBox"]
+custom_minimum_size = Vector2(0, 14)
+layout_mode = 2
+max_value = 500.0
+show_percentage = false
+
+[node name="XPTextLabel" type="Label" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin/HBox/XPBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.85, 0.95, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "0 / 500 XP (0%)"
+horizontal_alignment = 1
+
+[node name="BuyPremiumButton" type="Button" parent="CanvasLayerUI/MainVBox/SeasonHeader/Margin/HBox"]
+custom_minimum_size = Vector2(250, 42)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_default_cursor_shape = 2
+theme_override_colors/font_color = Color(0.08, 0.06, 0.01, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_gold_btn")
+text = "⚡ ACTIVAR PREMIUM (2 KILOWAT)"
+
+[node name="TabsBar" type="PanelContainer" parent="CanvasLayerUI/MainVBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/TabsBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_right = 24
+
+[node name="TabsHBox" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TabsBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="PassTabButton" type="Button" parent="CanvasLayerUI/MainVBox/TabsBar/Margin/TabsHBox"]
+custom_minimum_size = Vector2(180, 38)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "🎖️ Pistas del Pase"
+
+[node name="QuestsTabButton" type="Button" parent="CanvasLayerUI/MainVBox/TabsBar/Margin/TabsHBox"]
+custom_minimum_size = Vector2(180, 38)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+text = "📋 Misiones Diarias"
+
+[node name="TracksScroll" type="ScrollContainer" parent="CanvasLayerUI/MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TracksContainer" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/TracksScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="QuestsScroll" type="ScrollContainer" parent="CanvasLayerUI/MainVBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/MainVBox/QuestsScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
+
+[node name="QuestsWrapper" type="VBoxContainer" parent="CanvasLayerUI/MainVBox/QuestsScroll/Margin"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="ResetHeader" type="HBoxContainer" parent="CanvasLayerUI/MainVBox/QuestsScroll/Margin/QuestsWrapper"]
+layout_mode = 2
+
+[node name="ResetTimerLabel" type="Label" parent="CanvasLayerUI/MainVBox/QuestsScroll/Margin/QuestsWrapper/ResetHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 14
+text = "⏳ Reinicio de misiones en: 00:00:00"
+
+[node name="QuestsList" type="VBoxContainer" parent="CanvasLayerUI/MainVBox/QuestsScroll/Margin/QuestsWrapper"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RewardPreviewModal" type="Control" parent="CanvasLayerUI"]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DarkOverlay" type="ColorRect" parent="CanvasLayerUI/RewardPreviewModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.02, 0.03, 0.05, 0.9)
+
+[node name="Center" type="CenterContainer" parent="CanvasLayerUI/RewardPreviewModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="PanelContainer" parent="CanvasLayerUI/RewardPreviewModal/Center"]
+custom_minimum_size = Vector2(760, 460)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Margin" type="MarginContainer" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 22
+theme_override_constants/margin_bottom = 18
+
+[node name="VBox" type="VBoxContainer" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Header" type="HBoxContainer" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="PreviewTitle" type="Label" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "VISTA PREVIA DE RECOMPENSA"
+
+[node name="Spacer" type="Control" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ClosePreviewBtn" type="Button" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/Header"]
+custom_minimum_size = Vector2(36, 36)
+layout_mode = 2
+text = "✕"
+
+[node name="BgPreviewBox" type="VBoxContainer" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BgLargeImage" type="TextureRect" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/BgPreviewBox"]
+custom_minimum_size = Vector2(700, 340)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+expand_mode = 1
+stretch_mode = 6
+
+[node name="GenPreviewBox" type="HBoxContainer" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 20
+
+[node name="GenImage" type="TextureRect" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/GenPreviewBox"]
+custom_minimum_size = Vector2(180, 240)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GenDetails" type="VBoxContainer" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/GenPreviewBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="GenRarity" type="Label" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/GenPreviewBox/GenDetails"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.2, 1)
+theme_override_font_sizes/font_size = 12
+text = "★ RAREZA"
+
+[node name="GenName" type="Label" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/GenPreviewBox/GenDetails"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.88, 1, 1)
+theme_override_font_sizes/font_size = 20
+text = "Nombre"
+
+[node name="GenPower" type="Label" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/GenPreviewBox/GenDetails"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.85, 1, 1)
+theme_override_font_sizes/font_size = 13
+text = "⚡ Potencia"
+
+[node name="GenIncome" type="Label" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/GenPreviewBox/GenDetails"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 1, 0.5, 1)
+theme_override_font_sizes/font_size = 13
+text = "🪙 Generación"
+
+[node name="GenDesc" type="Label" parent="CanvasLayerUI/RewardPreviewModal/Center/Panel/Margin/VBox/GenPreviewBox/GenDetails"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.85, 0.9, 0.9)
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 2

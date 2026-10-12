@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GeneratorData" format=3]
+
+[ext_resource type="Script" path="res://data/definitions/generator_data.gd" id="1_gen"]
+[ext_resource type="Texture2D" path="res://assets/sprites/generators/ecoflow_thunder_pro.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_gen")
+id = "ecoflow_thunder_pro"
+name = "EcoFlow Thunder Pro"
+level = 1
+rarity = "Épico"
+item_type = "EcoFlow"
+description = "«Estación eléctrica pesada de titanio (Máx 1): produce 0.000000400 kW/min continuos.»"
+slots_required = 1
+is_purchasable = true
+cost_watt = 0.0
+cost_kilowat = 0.50
+power_kwp = 4.0e-07
+cycle_time_seconds = 60.0
+reward_kilowat = 4.0e-07
+texture = ExtResource("2_tex")

@@ -1,0 +1,10 @@
+# Normalizar saltos de línea para evitar conflictos Windows/Linux
+* text=auto eol=lf
+*.png binary
+*.webp binary
+*.jpg binary
+*.wav binary
+*.ogg binary
+*.tres text
+*.tscn text
+*.gd text

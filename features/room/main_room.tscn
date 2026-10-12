@@ -1,0 +1,154 @@
+[gd_scene format=3 uid="uid://cbfoeuiwpudtf"]
+
+[ext_resource type="Script" path="res://features/room/main_room.gd" id="1_room"]
+[ext_resource type="Texture2D" path="res://assets/sprites/room/room_background.png" id="2_bg"]
+[ext_resource type="PackedScene" path="res://features/room/grid/room_grid.tscn" id="3_grid"]
+[ext_resource type="PackedScene" path="res://features/room/components/room_hud.tscn" id="4_hud"]
+[ext_resource type="PackedScene" path="res://features/progression/battle_pass/battle_pass_screen.tscn" id="5_bpscene"]
+[ext_resource type="PackedScene" path="res://features/progression/referrals/referral_modal.tscn" id="6_referral_modal"]
+[ext_resource type="PackedScene" path="res://features/economy/power_split/power_split_modal.tscn" id="7_split_modal"]
+[ext_resource type="PackedScene" path="res://features/economy/extraction/extraction_modal.tscn" id="8_extract_modal"]
+[ext_resource type="PackedScene" path="res://features/room/racks/rack_manage_dialog.tscn" id="9_rack_dialog"]
+[ext_resource type="PackedScene" path="res://features/room/generators/plant_info_card.tscn" id="10_plant_card"]
+[ext_resource type="PackedScene" path="res://features/room/components/bg_selector_modal.tscn" id="11_bg_modal"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/btn_tienda.png" id="12_btntienda"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/btn_minijuegos.png" id="13_btnmini"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/icon_battlepass.png" id="15_bpicon"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/btn_evento_potencia.png" id="16_btnev"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_side_btn"]
+bg_color = Color(0.08, 0.10, 0.15, 0.88)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.38, 0.55, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="MainRoom" type="Node2D"]
+script = ExtResource("1_room")
+
+[node name="RoomBackground" type="TextureRect" parent="."]
+offset_right = 1280.0
+offset_bottom = 720.0
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="RoomGrid" parent="." instance=ExtResource("3_grid")]
+
+[node name="CanvasLayerUI" type="CanvasLayer" parent="."]
+
+[node name="RoomHUD" parent="CanvasLayerUI" instance=ExtResource("4_hud")]
+
+[node name="LeftSidebar" type="VBoxContainer" parent="CanvasLayerUI"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 3
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 20.0
+offset_top = 84.0
+offset_right = 190.0
+offset_bottom = 440.0
+grow_horizontal = 1
+grow_vertical = 1
+theme_override_constants/separation = 10
+
+[node name="ShopButton" type="TextureButton" parent="CanvasLayerUI/LeftSidebar"]
+custom_minimum_size = Vector2(170, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("12_btntienda")
+ignore_texture_size = true
+stretch_mode = 6
+
+[node name="MinigamesButton" type="TextureButton" parent="CanvasLayerUI/LeftSidebar"]
+custom_minimum_size = Vector2(170, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("13_btnmini")
+ignore_texture_size = true
+stretch_mode = 6
+
+[node name="CasinoButton" type="Button" parent="CanvasLayerUI/LeftSidebar"]
+custom_minimum_size = Vector2(170, 42)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_side_btn")
+theme_override_colors/font_color = Color(1, 0.5, 0.9, 1)
+text = "  🎰 CASINO"
+
+[node name="BattlePassButton" type="TextureButton" parent="CanvasLayerUI/LeftSidebar"]
+custom_minimum_size = Vector2(170, 50)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("15_bpicon")
+ignore_texture_size = true
+stretch_mode = 6
+
+[node name="ReferralButton" type="Button" parent="CanvasLayerUI/LeftSidebar"]
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_side_btn")
+text = "👥 REFERIDOS"
+
+[node name="ChangeBgButton" type="Button" parent="CanvasLayerUI/LeftSidebar"]
+visible = false
+custom_minimum_size = Vector2(170, 40)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_side_btn")
+text = "🖼️ FONDOS"
+
+# BANNER DE EVENTO FIJADO EN LA ESQUINA INFERIOR IZQUIERDA
+[node name="EventButtonContainer" type="Control" parent="CanvasLayerUI"]
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -100.0
+offset_right = 300.0
+offset_bottom = -20.0
+grow_vertical = 0
+
+[node name="EventButton" type="TextureButton" parent="CanvasLayerUI/EventButtonContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("16_btnev")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="PowerSplitModal" parent="CanvasLayerUI" instance=ExtResource("7_split_modal")]
+visible = false
+
+[node name="ExtractionModal" parent="CanvasLayerUI" instance=ExtResource("8_extract_modal")]
+visible = false
+
+[node name="RackManageDialog" parent="CanvasLayerUI" instance=ExtResource("9_rack_dialog")]
+visible = false
+
+[node name="PlantInfoCard" parent="CanvasLayerUI" instance=ExtResource("10_plant_card")]
+visible = false
+
+[node name="BattlePassScreen" parent="CanvasLayerUI" instance=ExtResource("5_bpscene")]
+visible = false
+
+[node name="ReferralModal" parent="CanvasLayerUI" instance=ExtResource("6_referral_modal")]
+visible = false
+
+[node name="BgSelectorModal" parent="CanvasLayerUI" instance=ExtResource("11_bg_modal")]
+visible = false

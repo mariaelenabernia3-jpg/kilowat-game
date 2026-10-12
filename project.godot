@@ -1,0 +1,45 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="KILOWAT"
+run/main_scene="uid://7ckyh62lbs7b"
+config/features=PackedStringArray("4.6", "GL Compatibility")
+config/icon="uid://e22ja3oafbki"
+
+[autoload]
+
+EventBus="*res://core/state/event_bus.gd"
+SupabaseClient="*res://core/network/supabase_client.gd"
+SupabaseAuth="*res://core/network/supabase_auth.gd"
+GameManager="*res://core/state/game_manager.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=true
+
+[physics]
+
+3d/physics_engine="Jolt Physics"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+rendering_device/driver.windows="d3d12"
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

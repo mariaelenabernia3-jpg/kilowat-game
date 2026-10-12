@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="GeneratorData" format=3]
+
+[ext_resource type="Script" path="res://data/definitions/generator_data.gd" id="1_gen"]
+[ext_resource type="Texture2D" path="res://assets/sprites/generators/ecoflow_spark_plus.png" id="2_tex"]
+
+[resource]
+script = ExtResource("1_gen")
+id = "ecoflow_spark_plus"
+name = "EcoFlow Spark Plus"
+level = 1
+rarity = "Común"
+item_type = "EcoFlow"
+description = "«Versión mejorada de Spark con celdas de litio (Máx 4): 0.000000100 kW/min continuos.»"
+slots_required = 1
+is_purchasable = true
+cost_watt = 0.8
+cost_kilowat = 0.0
+power_kwp = 1.0e-07
+cycle_time_seconds = 60.0
+reward_kilowat = 1.0e-07
+texture = ExtResource("2_tex")
