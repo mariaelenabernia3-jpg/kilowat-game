@@ -250,18 +250,8 @@ func _on_game_won() -> void:
 		else:
 			result_message.text = "¡Nivel superado!\n+%.9f KWP ganado.\n(Progreso nivel: %d / 6 victorias)" % [reward, wins_in_lvl]
 			
-		# Notificación y guardado inmediato de pieza obtenida
-		if bool(data.get("has_dropped_part", false)):
-			var raw_type = str(data.get("dropped_part_type", "repuesto")).strip_edges().to_lower()
-			var p_lvl = int(data.get("dropped_part_level", 1))
-			var p_qty = int(data.get("dropped_part_qty", 1))
-			result_message.text += "\n📦 ¡Recompensa de Taller: +%d %s (Nv. %d)!" % [p_qty, raw_type.capitalize(), p_lvl]
-			
-			# 1. Sumar inmediatamente a la memoria local (evita que se quede en 0)
-			GameManager.add_part_locally(raw_type, p_lvl, p_qty)
-			
-			# 2. Sincronizar en segundo plano
-			GameManager.load_player_parts()
+		# Recompensas de Materiales y Profesión RPG
+		result_message.text += GameManager.process_minigame_rpg_rewards(data)
 
 func _on_game_lost(reason: String) -> void:
 	game_over = true

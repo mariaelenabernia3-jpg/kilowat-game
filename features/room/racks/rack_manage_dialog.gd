@@ -44,8 +44,12 @@ func open_dialog(rack: Dictionary, rack_data: RackData) -> void:
 				
 		if not installed_gen.is_empty():
 			placed_count += 1
+			var g_type = str(installed_gen.get("generator_type", ""))
+			var tier = _get_generator_tier(g_type)
+			var tier_name = ["Común", "Poco Común", "Especial", "Épico", "Legendario"][tier - 1]
+			
 			var name_lbl := Label.new()
-			name_lbl.text = _format_gen_name(str(installed_gen.get("generator_type", "")))
+			name_lbl.text = "%s [%s]" % [_format_gen_name(g_type), tier_name]
 			name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			slot_hbox.add_child(name_lbl)
 			
@@ -79,7 +83,9 @@ func open_dialog(rack: Dictionary, rack_data: RackData) -> void:
 			
 			var unplaced_gens: Array = []
 			for gen in GameManager.player_generators:
-				if gen.get("rack_id") == null: unplaced_gens.append(gen)
+				var is_unmounted = (gen.get("rack_id") == null or str(gen.get("rack_id")) == "" or str(gen.get("rack_id")) == "null")
+				if is_unmounted:
+					unplaced_gens.append(gen)
 					
 			if unplaced_gens.is_empty():
 				popup.add_item("Sin equipos en almacén")
@@ -91,7 +97,7 @@ func open_dialog(rack: Dictionary, rack_data: RackData) -> void:
 					var active_count = _get_active_count_for_type(g_type)
 					
 					if active_count >= limit:
-						popup.add_item("%s (Límite en sala %d/%d)" % [_format_gen_name(g_type), active_count, limit], i)
+						popup.add_item("%s (Límite %d/%d en sala)" % [_format_gen_name(g_type), active_count, limit], i)
 						popup.set_item_disabled(i, true)
 					else:
 						popup.add_item("%s (%d/%d en sala)" % [_format_gen_name(g_type), active_count, limit], i)
@@ -111,28 +117,54 @@ func open_dialog(rack: Dictionary, rack_data: RackData) -> void:
 	dialog_status.text = "Espacios en uso: %d / %d" % [placed_count, rack_data.total_slots]
 	visible = true
 
+# ====================================================================
+# CONTROL DE LIMITES Y TIERS
+# ====================================================================
+
+func _get_generator_tier(g_type: String) -> int:
+	if GameManager.has_method("get_generator_tier"):
+		return GameManager.get_generator_tier(g_type)
+	match g_type:
+		"planta_meme", "dinamo_manual", "ecoflow_spark", "bateria_plomo": return 1
+		"ecoflow_spark_plus", "panel_solar", "molino_eolico": return 2
+		"delta_mini", "inverter_silencioso": return 3
+		"ecoflow_thunder_pro", "pro_electrico", "turbina_hidro": return 4
+		"ecoflow_ultra", "cyber_tank", "reactor_magnetico": return 5
+		_: return 1
+
+func _get_room_limit_for_type(g_type: String) -> int:
+	var tier = _get_generator_tier(g_type)
+	match tier:
+		1: return 4 # 4 de cada modelo común
+		2: return 3 # 3 de cada modelo poco común
+		3: return 2 # 2 de cada modelo especial
+		4: return 1 # 1 de cada modelo épico
+		5: return 1 # 1 de cada modelo legendario
+		_: return 1
+
 func _get_active_count_for_type(g_type: String) -> int:
 	var count: int = 0
 	for gen in GameManager.player_generators:
-		if str(gen.get("generator_type", "")) == g_type and gen.get("rack_id") != null and str(gen.get("rack_id")) != "" and str(gen.get("rack_id")) != "null":
+		var is_mounted = (gen.get("rack_id") != null and str(gen.get("rack_id")) != "" and str(gen.get("rack_id")) != "null")
+		if is_mounted and str(gen.get("generator_type", "")) == g_type:
 			count += 1
 	return count
 
-func _get_room_limit_for_type(g_type: String) -> int:
-	match g_type:
-		"ecoflow_spark", "ecoflow_spark_plus": return 4
-		"ecoflow_thunder_pro", "ecoflow_ultra", "cyber_tank": return 1
-		_: return 999
-
 func _format_gen_name(g_type: String) -> String:
 	match g_type:
+		"planta_meme": return "Planta Meme"
+		"dinamo_manual": return "Generador Manual"
 		"ecoflow_spark": return "EcoFlow Spark"
+		"bateria_plomo": return "Batería de Plomo"
 		"ecoflow_spark_plus": return "EcoFlow Spark Plus"
+		"panel_solar": return "Panel Solar"
+		"molino_eolico": return "Mini Molino Eólico"
+		"delta_mini": return "EcoFlow DELTA Mini"
+		"inverter_silencioso": return "Inverter Silencioso"
 		"ecoflow_thunder_pro": return "EcoFlow Thunder Pro"
+		"pro_electrico": return "EcoFlow Pro Eléctrico"
+		"turbina_hidro": return "Turbina Hidroeléctrica"
 		"ecoflow_ultra": return "EcoFlow Ultra"
 		"cyber_tank": return "Cyber Tank 100%"
-		"dinamo_manual": return "Generador Manual"
-		"delta_mini": return "EcoFlow DELTA Mini"
-		"panel_solar": return "Panel Solar"
-		"pro_electrico": return "EcoFlow Pro Eléctrico"
-		_: return "Planta Meme"
+		"reactor_magnetico": return "Reactor Magnético"
+		_: return "Generador"

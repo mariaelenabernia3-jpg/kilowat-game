@@ -396,7 +396,12 @@ func _get_catalog(cat: String) -> Array:
 				{"id": "pack_2_kilo", "name": "2 KILOWAT (Pase)", "rarity": "Moneda", "stat_desc": "2.0 kW (Pase Premium)", "description": "Saldo exacto para activar el Pase de Batalla.", "is_fiat": true, "fiat_price": "1000 CUP", "texture_path": "res://assets/sprites/ui/icon_kilowat.png"},
 				{"id": "pack_3_kilo", "name": "3 KILOWAT", "rarity": "Moneda", "stat_desc": "3.0 kW Alta Potencia", "description": "Paquete de 3.0 KILOWAT directo a tu cuenta.", "is_fiat": true, "fiat_price": "1500 CUP", "texture_path": "res://assets/sprites/ui/icon_kilowat.png"},
 				{"id": "pack_4_kilo", "name": "4 KILOWAT", "rarity": "Moneda", "stat_desc": "4.0 kW Con Ahorro", "description": "Paquete de 4.0 KILOWAT directo a tu cuenta.", "is_fiat": true, "fiat_price": "2000 CUP", "texture_path": "res://assets/sprites/ui/icon_kilowat.png"},
-
+				
+				# KITS INDUSTRIALES PARA BALLENAS (SUMINISTROS MASIVOS EN CUP)
+				{"id": "pack_whale_mat_basic", "name": "Caja de Materiales Básicos", "rarity": "Épico", "stat_desc": "+50 Cobre, +50 Plástico, +50 Silicio (T1)", "description": "Lote inicial de materias primas para reparar y craftear al instante sin grindear.", "is_fiat": true, "fiat_price": "350 CUP",	"texture_path": "res://assets/sprites/ui/icon_chip.png"},
+				{"id": "pack_whale_mat_industrial",	"name": "Caja de Suministros Industriales", "rarity": "Legendario",	"stat_desc": "+100 de Todos los Materiales (T1 y T2)", "description": "100 Cobre, 100 Plástico, 100 Silicio y 50 Hierro. El kit predilecto para plantas avanzadas.", "is_fiat": true, "fiat_price": "850 CUP", "texture_path": "res://assets/sprites/ui/icon_kilowat.png"},
+				{"id": "pack_whale_vip_parts", "name": "Kit de Mantenimiento VIP", "rarity": "Legendario", "stat_desc": "Piezas Nv.3 Manufacturadas Listas", "description": "Incluye 10 Cables Nv.3, 10 Ventiladores Nv.3 y 5 Paneles Nv.3. Reparación inmediata al 100%.",	"is_fiat": true, "fiat_price": "1400 CUP", "texture_path": "res://assets/sprites/generators/cyber_tank.png"},
+				
 				# COMBOS ESPECIALES
 				{"id": "combo_2k_2w", "name": "Combo 2 Kilo + 2 Watt", "rarity": "Combo", "stat_desc": "2.0 KW + 2.0 W Saldo", "description": "Recibe 2.0 KILOWAT y 2.0 WATT en tu cuenta.", "is_fiat": true, "fiat_price": "1100 CUP", "texture_path": "res://assets/sprites/ui/icon_kilowat.png"},
 				{"id": "combo_3k_4w", "name": "Combo 3 Kilo + 4 Watt", "rarity": "Combo", "stat_desc": "3.0 KW + 4.0 W Saldo", "description": "Recibe 3.0 KILOWAT y 4.0 WATT en tu cuenta.", "is_fiat": true, "fiat_price": "1800 CUP", "texture_path": "res://assets/sprites/ui/icon_kilowat.png"},

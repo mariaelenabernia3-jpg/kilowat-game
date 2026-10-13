@@ -5,6 +5,8 @@ extends Node2D
 var room_hud: Node = null
 var room_grid: Node = null
 var room_background: TextureRect = null
+var room_alert_toast: PanelContainer = null
+var alert_tween: Tween = null
 
 # Modales de la Escena
 var power_split_modal: Control = null
@@ -32,6 +34,7 @@ var drawer_width: float = 210.0
 var drawer_tween: Tween = null
 var drawer_tab_btn: Button = null
 var drawer_bg_btn: Button = null
+var talent_modal: Control = null
 
 # Menú Lateral Derecho Desplegable (Almacén)
 var inv_root: Control = null
@@ -94,7 +97,7 @@ const KILOWAT_ICON: Texture2D = preload("res://assets/sprites/ui/icon_kilowat.pn
 var spawned_racks: Dictionary = {}
 
 func _ready() -> void:
-	_force_load_patch_zoom_controller() # <-- AÑADIR AQUÍ
+	_force_load_patch_zoom_controller()
 	_resolve_nodes()
 	_setup_connections()
 	_create_sliding_drawer()
@@ -114,6 +117,12 @@ func _ready() -> void:
 			_refresh_inventory_ui()
 		)
 	
+	# Instanciar el Árbol de Talentos
+	var talent_script = load("res://features/progression/talents/talent_tree_modal.gd")
+	if talent_script:
+		talent_modal = talent_script.new()
+		$CanvasLayerUI.add_child(talent_modal)
+	
 	_apply_equipped_background()
 	
 	await GameManager.load_player_inventory()
@@ -128,23 +137,24 @@ func _process(delta: float) -> void:
 func _force_load_patch_zoom_controller() -> void:
 	var root_viewport = get_tree().root
 	
-	# Eliminar cualquier controlador viejo que haya quedado en memoria desde el inicio de la APK
-	var old_nodes = [
-		root_viewport.get_node_or_null("GlobalZoomController"),
-		get_node_or_null("/root/GameManager/GlobalZoomController")
-	]
-	for node in old_nodes:
-		if node and is_instance_valid(node):
-			node.name = "OldZoom_Disposed"
-			node.queue_free()
+	# 1. Si ya existe uno activo y válido, no crearlo de nuevo
+	var existing = root_viewport.get_node_or_null("GlobalZoomController")
+	if existing and is_instance_valid(existing):
+		return
 
-	# Cargar forzosamente el script nuevo del .pck ignorando la caché
+	# 2. Limpiar residuos antes de instanciar
+	for child in root_viewport.get_children():
+		if child.name.begins_with("OldZoom") or child.name == "GlobalZoomController":
+			child.queue_free()
+
+	# 3. Cargar el script nuevo del .pck ignorando caché
 	var z_path := "res://features/room/controls/zoom_controller.gd"
-	var z_script = ResourceLoader.load(z_path, "", ResourceLoader.CACHE_MODE_REPLACE)
-	if z_script:
-		var new_zoom = z_script.new()
-		new_zoom.name = "GlobalZoomController"
-		root_viewport.add_child(new_zoom)
+	if ResourceLoader.exists(z_path):
+		var z_script = ResourceLoader.load(z_path, "", ResourceLoader.CACHE_MODE_REPLACE)
+		if z_script:
+			var new_zoom = z_script.new()
+			new_zoom.name = "GlobalZoomController"
+			root_viewport.add_child(new_zoom)
 
 func _resolve_nodes() -> void:
 	room_hud = find_child("RoomHUD", true, false)
@@ -179,33 +189,42 @@ func _find_button(names: Array) -> BaseButton:
 func _setup_connections() -> void:
 	if room_hud:
 		if room_hud.has_signal("split_requested") and power_split_modal:
-			room_hud.split_requested.connect(func():
+			var split_cb = func():
 				_close_all_drawers()
 				if power_split_modal.has_method("open_modal"): power_split_modal.open_modal()
 				else: power_split_modal.visible = true
-			)
+			if not room_hud.split_requested.is_connected(split_cb):
+				room_hud.split_requested.connect(split_cb)
+
 		if room_hud.has_signal("extract_requested") and extraction_modal:
-			room_hud.extract_requested.connect(func():
+			var extract_cb = func():
 				_close_all_drawers()
 				if extraction_modal.has_method("open_modal"): extraction_modal.open_modal()
 				else: extraction_modal.visible = true
-			)
+			if not room_hud.extract_requested.is_connected(extract_cb):
+				room_hud.extract_requested.connect(extract_cb)
 	
 	if bg_selector_modal and bg_selector_modal.has_signal("background_changed"):
-		bg_selector_modal.background_changed.connect(func(_id): _apply_equipped_background())
+		var bg_cb = func(_id): _apply_equipped_background()
+		if not bg_selector_modal.background_changed.is_connected(bg_cb):
+			bg_selector_modal.background_changed.connect(bg_cb)
 			
 	if event_btn:
-		event_btn.pressed.connect(func(): get_tree().change_scene_to_file("res://features/progression/tournament/event_leaderboard.tscn"))
+		var ev_cb = func(): get_tree().change_scene_to_file("res://features/progression/tournament/event_leaderboard.tscn")
+		if not event_btn.pressed.is_connected(ev_cb):
+			event_btn.pressed.connect(ev_cb)
 	
 	if rack_manage_dialog:
-		if rack_manage_dialog.has_signal("generator_unmounted"):
+		if rack_manage_dialog.has_signal("generator_unmounted") and not rack_manage_dialog.generator_unmounted.is_connected(_on_generator_unmounted):
 			rack_manage_dialog.generator_unmounted.connect(_on_generator_unmounted)
-		if rack_manage_dialog.has_signal("generator_mounted"):
+		if rack_manage_dialog.has_signal("generator_mounted") and not rack_manage_dialog.generator_mounted.is_connected(_on_generator_mounted):
 			rack_manage_dialog.generator_mounted.connect(_on_generator_mounted)
 	
 	if room_grid:
-		if room_grid.has_signal("slot_selected"): room_grid.slot_selected.connect(_on_slot_clicked)
-		if room_grid.has_signal("rack_hold_unmounted"): room_grid.rack_hold_unmounted.connect(_on_rack_hold_unmounted)
+		if room_grid.has_signal("slot_selected") and not room_grid.slot_selected.is_connected(_on_slot_clicked):
+			room_grid.slot_selected.connect(_on_slot_clicked)
+		if room_grid.has_signal("rack_hold_unmounted") and not room_grid.rack_hold_unmounted.is_connected(_on_rack_hold_unmounted):
+			room_grid.rack_hold_unmounted.connect(_on_rack_hold_unmounted)
 
 func _check_active_event() -> void:
 	var res = await SupabaseClient.send_request("/rest/v1/rpc/get_power_competition_leaderboard", HTTPClient.METHOD_POST, {}, true)
@@ -296,6 +315,7 @@ func _create_sliding_drawer() -> void:
 
 	var options = [
 		{"id": "taller", "text": "🔧 Taller Mecánico", "color": Color(1.0, 0.85, 0.25)},
+		{"id": "talents", "text": "🌳 Árbol de Talentos", "color": Color(0.35, 0.9, 1.0)},
 		{"id": "market", "text": "🛒 Mercado P2P", "color": Color(0.3, 0.95, 0.75)},
 		{"id": "shop", "text": "Tienda Oficial", "color": Color(0.95, 0.98, 1.0)},
 		{"id": "minigames", "text": "Minijuegos", "color": Color(0.95, 0.98, 1.0)},
@@ -379,6 +399,9 @@ func _on_drawer_option_pressed(opt_id: String) -> void:
 		"taller":
 			_close_drawer()
 			if taller_modal: taller_modal.open_modal()
+		"talents":
+			_close_drawer()
+			if talent_modal: talent_modal.open_modal()
 		"market":
 			_close_drawer()
 			_open_market_modal()
@@ -705,9 +728,14 @@ func _fetch_and_show_browse_listings() -> void:
 			cm.add_child(vb)
 
 			var name_str = ""
-			if i_type == "generator": name_str = "⚡ " + _format_gen_name(sub_type)
-			elif i_type == "rack": name_str = "🗄️ " + _format_rack_name(sub_type)
-			else: name_str = "🔩 %s Nv.%d (Lote x%d)" % [sub_type.capitalize(), int(l.get("part_level", 1)), qty]
+			if i_type == "generator": 
+				name_str = "⚡ " + _format_gen_name(sub_type)
+			elif i_type == "rack": 
+				name_str = "🗄️ " + _format_rack_name(sub_type)
+			elif i_type == "material": 
+				name_str = "📦 %s T%d (Lote x%d)" % [sub_type.capitalize(), int(l.get("part_level", 1)), qty]
+			else: 
+				name_str = "🔩 %s Nv.%d (Lote x%d)" % [sub_type.capitalize(), int(l.get("part_level", 1)), qty]
 
 			var lbl := Label.new()
 			lbl.text = name_str
@@ -749,57 +777,83 @@ func _fetch_and_show_browse_listings() -> void:
 			vb.add_child(buy_b)
 			market_grid.add_child(card)
 
+# ====================================================================
+# PESTAÑA: VENDER MI INVENTARIO (MATERIALES, REPUESTOS Y GENERADORES)
+# ====================================================================
 func _show_sellable_inventory() -> void:
 	for child in market_grid.get_children(): child.queue_free()
 	market_status_lbl.text = "Cargando tus artículos..."
+	
+	# Cargar inventarios actualizados desde el servidor
 	await GameManager.load_player_inventory()
+	await GameManager.load_player_rpg_state()
 	market_status_lbl.text = ""
 
+	# 1. Filtrar Materiales Brutos desde 1 unidad
+	var sellable_materials: Array = []
+	for m in GameManager.player_materials:
+		if int(m.get("quantity", 0)) >= 1:
+			sellable_materials.append(m)
+
+	# 2. Filtrar Generadores desmontados y montados
 	var unmounted_gens: Array = []
 	var mounted_gens: Array = []
 	for g in GameManager.player_generators:
-		if g.get("rack_id") == null or str(g.get("rack_id")) == "" or str(g.get("rack_id")) == "null":
+		var is_mounted = (g.get("rack_id") != null and str(g.get("rack_id")) != "" and str(g.get("rack_id")) != "null")
+		if not is_mounted:
 			unmounted_gens.append(g)
 		else:
 			mounted_gens.append(g)
 
+	# 3. Filtrar Estanterías en almacén
 	var sellable_racks: Array = []
 	for r in GameManager.player_racks:
 		if int(r.get("slot_index", -1)) == -1:
 			sellable_racks.append(r)
 
+	# 4. Filtrar Repuestos y piezas manufacturadas
 	var sellable_parts: Array = []
 	for p in GameManager.player_parts:
 		if int(p.get("quantity", 0)) > 0:
 			sellable_parts.append(p)
 
-	if unmounted_gens.is_empty() and mounted_gens.is_empty() and sellable_racks.is_empty() and sellable_parts.is_empty():
+	# Comprobación de almacén totalmente vacío
+	if sellable_materials.is_empty() and unmounted_gens.is_empty() and mounted_gens.is_empty() and sellable_racks.is_empty() and sellable_parts.is_empty():
 		var empty_lbl := Label.new()
-		empty_lbl.text = "Tu almacén está vacío. Gana repuestos en minijuegos o desmonta plantas para venderlas aquí."
+		empty_lbl.text = "Tu almacén está vacío. Juega minijuegos para recolectar materiales o craftea piezas para venderlas aquí."
 		empty_lbl.add_theme_font_size_override("font_size", 13)
 		market_grid.add_child(empty_lbl)
 		return
 
-	# 1. Repuestos de taller disponibles
+	# --- RENDERIZADO DE ARTÍCULOS EN VENTA ---
+
+	# A. Lotes de Materiales Brutos (Cobre, Silicio, Plástico, Hierro)
+	for m in sellable_materials:
+		var mtype = str(m.get("material_type", ""))
+		var mtier = int(m.get("tier", 1))
+		var mqty = int(m.get("quantity", 0))
+		market_grid.add_child(_build_sell_material_card(mtype, mtier, mqty))
+
+	# B. Repuestos de taller manufacturados
 	for p in sellable_parts:
 		var ptype = str(p.get("part_type", ""))
 		var plvl = int(p.get("part_level", 1))
 		var pqty = int(p.get("quantity", 1))
 		market_grid.add_child(_build_sell_part_card(ptype, plvl, pqty))
 
-	# 2. Generadores en almacén (listos para publicar)
+	# C. Generadores en almacén (listos para publicar)
 	for g in unmounted_gens:
 		var gid = str(g.get("id", ""))
 		var gtype = str(g.get("generator_type", ""))
 		market_grid.add_child(_build_sell_item_card("generator", gid, "⚡ " + _format_gen_name(gtype)))
 
-	# 3. Generadores instalados en la habitación (con opción para desmontar)
+	# D. Generadores instalados en estanterías (opción de desmontar)
 	for g in mounted_gens:
 		var gid = str(g.get("id", ""))
 		var gtype = str(g.get("generator_type", ""))
 		market_grid.add_child(_build_mounted_gen_card(gid, _format_gen_name(gtype)))
 
-	# 4. Estanterías en almacén
+	# E. Estanterías en almacén
 	for r in sellable_racks:
 		var rid = str(r.get("id", ""))
 		var rtype = str(r.get("rack_type", ""))
@@ -1051,9 +1105,14 @@ func _show_my_listings() -> void:
 			var iqty = int(it.get("quantity", 1))
 
 			var display = ""
-			if itype == "part": display = "🔩 %s Nv.%d (Lote x%d)" % [isub.capitalize(), int(it.get("part_level", 1)), iqty]
-			elif itype == "generator": display = "⚡ " + _format_gen_name(isub)
-			else: display = "🗄️ " + _format_rack_name(isub)
+			if itype == "material":
+				display = "📦 %s T%d (Lote x%d)" % [isub.capitalize(), int(it.get("part_level", 1)), iqty]
+			elif itype == "part": 
+				display = "🔩 %s Nv.%d (Lote x%d)" % [isub.capitalize(), int(it.get("part_level", 1)), iqty]
+			elif itype == "generator": 
+				display = "⚡ " + _format_gen_name(isub)
+			else: 
+				display = "🗄️ " + _format_rack_name(isub)
 
 			var lbl := Label.new()
 			lbl.text = display
@@ -1145,24 +1204,49 @@ func _on_rack_hold_unmounted(slot_index: int) -> void:
 	await GameManager.unmount_rack_complete(r_id)
 
 func _on_generator_unmounted(gen_id: String) -> void:
+	# 1. Desvincular en la memoria local buscando por id o gen_id
 	for g in GameManager.player_generators:
-		if str(g.get("id", "")) == gen_id:
-			g["rack_id"] = null; g["slot_in_rack"] = -1; break
+		var current_id = str(g.get("id", g.get("gen_id", "")))
+		if current_id == gen_id:
+			g["rack_id"] = null
+			g["slot_in_rack"] = -1
+			break
+
 	GameManager.set_generator_power(gen_id, false, 0.0)
 	_render_placed_generators()
 	_refresh_inventory_ui()
-	await GameManager.unmount_generator(gen_id)
+
+	# 2. Desvincular en el servidor
+	var ok: bool = await GameManager.unmount_generator(gen_id)
+	if ok:
+		show_room_alert("✓ Generador desmontado y guardado en el almacén.", false)
+	else:
+		show_room_alert("⚠️ Error al sincronizar el desmonte con el servidor.", true)
 
 func _on_generator_mounted(gen_id: String, slot_idx: int) -> void:
 	if rack_manage_dialog and "current_rack" in rack_manage_dialog:
 		var r_id: String = str(rack_manage_dialog.current_rack.get("id", rack_manage_dialog.current_rack.get("rack_id", "")))
-		var ok = await GameManager.place_generator_in_rack(gen_id, r_id, slot_idx)
-		if not ok:
+		
+		# Llamada segura: tolera tanto Diccionario como Booleano para evitar crasheos
+		var raw_res = await GameManager.place_generator_in_rack(gen_id, r_id, slot_idx)
+		var is_success: bool = false
+		var error_text: String = "No se pudo montar el generador."
+		
+		if typeof(raw_res) == TYPE_DICTIONARY:
+			is_success = bool(raw_res.get("success", false))
+			error_text = str(raw_res.get("error", error_text))
+		elif typeof(raw_res) == TYPE_BOOL:
+			is_success = raw_res
+
+		if not is_success:
+			show_room_alert("⚠️ " + error_text, true)
 			await GameManager.load_player_inventory()
 			_render_placed_generators()
 			_refresh_inventory_ui()
 			return
 		
+		show_room_alert("✓ Generador colocado con éxito.", false)
+
 		for g in GameManager.player_generators:
 			var is_same_rack = str(g.get("rack_id", "")) == r_id
 			var is_same_slot = int(g.get("slot_in_rack", -1)) == slot_idx
@@ -1872,3 +1956,136 @@ func _fetch_friends_data() -> void:
 func _respond_friend_req(request_id: String, accept: bool) -> void:
 	await SupabaseClient.send_request("/rest/v1/rpc/respond_friend_request", HTTPClient.METHOD_POST, {"p_request_id": request_id, "p_accept": accept}, true)
 	_fetch_friends_data()
+
+func _build_sell_material_card(mat_type: String, tier: int, max_stock: int) -> PanelContainer:
+	var card := PanelContainer.new()
+	card.custom_minimum_size = Vector2(285, 205)
+	var c_st := StyleBoxFlat.new()
+	c_st.bg_color = Color(0.08, 0.11, 0.16, 0.95)
+	c_st.border_color = Color(0.35, 0.88, 1.0, 0.8)
+	c_st.set_border_width_all(1); c_st.set_corner_radius_all(8)
+	card.add_theme_stylebox_override("panel", c_st)
+
+	var cm := MarginContainer.new()
+	cm.add_theme_constant_override("margin_left", 14); cm.add_theme_constant_override("margin_right", 14)
+	cm.add_theme_constant_override("margin_top", 12); cm.add_theme_constant_override("margin_bottom", 12)
+	card.add_child(cm)
+
+	var vb := VBoxContainer.new()
+	vb.add_theme_constant_override("separation", 5)
+	cm.add_child(vb)
+
+	var title := Label.new()
+	title.text = "📦 %s T%d (Tienes: %d)" % [mat_type.capitalize(), tier, max_stock]
+	title.add_theme_font_size_override("font_size", 13)
+	title.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
+	vb.add_child(title)
+
+	var qty_row := HBoxContainer.new()
+	var qty_lbl := Label.new()
+	qty_lbl.text = "Cantidad a vender:"
+	qty_lbl.add_theme_font_size_override("font_size", 11)
+	qty_row.add_child(qty_lbl)
+
+	var qty_spin := SpinBox.new()
+	qty_spin.min_value = 1
+	qty_spin.max_value = max_stock
+	qty_spin.step = 1
+	qty_spin.value = maxi(1, mini(10, max_stock))
+	qty_row.add_child(qty_spin)
+	vb.add_child(qty_row)
+
+	var input_row := HBoxContainer.new()
+	var price_in := LineEdit.new()
+	price_in.placeholder_text = "Precio"
+	price_in.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	input_row.add_child(price_in)
+
+	var cur_opt := OptionButton.new()
+	cur_opt.add_item("WATT", 0)
+	cur_opt.add_item("KILOWAT", 1)
+	cur_opt.selected = 1 # Por defecto en Kilowatts para que ganen dinero real
+	input_row.add_child(cur_opt)
+	vb.add_child(input_row)
+
+	var btn_pub := Button.new()
+	btn_pub.text = "🚀 Vender por Kilowatts"
+	btn_pub.custom_minimum_size = Vector2(0, 34)
+	btn_pub.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	btn_pub.pressed.connect(func():
+		var p_val = float(price_in.text)
+		var q_val = int(qty_spin.value)
+		if p_val <= 0.0:
+			market_status_lbl.text = "⚠️ El precio debe ser mayor a 0."
+			return
+		btn_pub.disabled = true
+		var cur_str = "watt" if cur_opt.selected == 0 else "kilowat"
+		var body = {
+			"p_material_type": mat_type, 
+			"p_tier": tier, 
+			"p_quantity": q_val, 
+			"p_price": p_val, 
+			"p_currency": cur_str
+		}
+		var pub_res = await SupabaseClient.send_request("/rest/v1/rpc/publish_market_material", HTTPClient.METHOD_POST, body, true)
+		if pub_res.get("success", false) and pub_res.get("data", {}).get("success", false):
+			market_status_lbl.text = "✓ ¡Lote de materiales publicado en el mercado!"
+			await GameManager.load_player_rpg_state()
+			_show_sellable_inventory()
+		else:
+			market_status_lbl.text = "⚠️ " + str(pub_res.get("data", {}).get("error", "Error al publicar"))
+			btn_pub.disabled = false
+	)
+	vb.add_child(btn_pub)
+	return card
+	
+func show_room_alert(message: String, is_error: bool = true) -> void:
+	var canvas_ui = find_child("CanvasLayerUI", true, false)
+	if canvas_ui == null: return
+
+	if room_alert_toast == null or not is_instance_valid(room_alert_toast):
+		room_alert_toast = PanelContainer.new()
+		room_alert_toast.name = "RoomAlertToast"
+		room_alert_toast.custom_minimum_size = Vector2(480, 48)
+		room_alert_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		room_alert_toast.offset_top = 18.0
+		room_alert_toast.offset_left = -240.0
+		room_alert_toast.offset_right = 240.0
+		room_alert_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		var lbl := Label.new()
+		lbl.name = "AlertLabel"
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lbl.add_theme_font_size_override("font_size", 12)
+		room_alert_toast.add_child(lbl)
+
+		canvas_ui.add_child(room_alert_toast)
+
+	var st := StyleBoxFlat.new()
+	st.bg_color = Color(0.15, 0.05, 0.05, 0.96) if is_error else Color(0.05, 0.15, 0.08, 0.96)
+	st.border_color = Color(1.0, 0.35, 0.35, 1.0) if is_error else Color(0.35, 1.0, 0.55, 1.0)
+	st.set_border_width_all(2)
+	st.set_corner_radius_all(10)
+	st.shadow_color = Color(0.8, 0.1, 0.1, 0.35) if is_error else Color(0.1, 0.8, 0.3, 0.35)
+	st.shadow_size = 10
+	room_alert_toast.add_theme_stylebox_override("panel", st)
+
+	var label_node: Label = room_alert_toast.get_node("AlertLabel")
+	label_node.text = message
+	label_node.add_theme_color_override("font_color", Color(1.0, 0.85, 0.85) if is_error else Color(0.85, 1.0, 0.9))
+
+	room_alert_toast.visible = true
+	room_alert_toast.modulate.a = 0.0
+	room_alert_toast.position.y = 0.0
+
+	if alert_tween and alert_tween.is_running(): 
+		alert_tween.kill()
+		
+	alert_tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	alert_tween.tween_property(room_alert_toast, "modulate:a", 1.0, 0.25)
+	alert_tween.tween_property(room_alert_toast, "position:y", 18.0, 0.25)
+	alert_tween.tween_interval(3.2)
+	alert_tween.tween_property(room_alert_toast, "modulate:a", 0.0, 0.35)
+	alert_tween.tween_callback(func(): room_alert_toast.visible = false)

@@ -49,6 +49,16 @@ var saved_active_friend_name: String = ""
 var saved_is_chat_minimized: bool = false
 var pending_friend_requests_count: int = 0
 
+# --- Estado RPG del Jugador (Fase 1) ---
+var player_materials: Array = [] # [{ "material_type": "cobre", "tier": 1, "quantity": 10 }]
+var player_professions: Dictionary = {
+	"chatarrero_level": 0, "chatarrero_xp": 0,
+	"ingeniero_level": 0, "ingeniero_xp": 0,
+	"corredor_level": 0, "corredor_xp": 0
+}
+var player_talents: Array = []
+var talent_points: int = 0
+
 var global_zoom: Node = null
 
 func _ready() -> void:
@@ -57,10 +67,11 @@ func _ready() -> void:
 	_setup_global_zoom()
 
 func _setup_global_zoom() -> void:
-	var old_z = get_node_or_null("GlobalZoomController")
-	if old_z:
-		old_z.name = "OldZoom_Disposed"
-		old_z.queue_free()
+	# Eliminar cualquier controlador huérfano en el viewport raíz
+	var root_node = get_tree().root
+	for child in root_node.get_children():
+		if child.name.begins_with("GlobalZoomController") or child.name.begins_with("OldZoom"):
+			child.queue_free()
 
 func _process(delta: float) -> void:
 	_process_online_power_decay(delta)
@@ -200,6 +211,7 @@ func load_profile() -> bool:
 		last_minigame_time = parsed_mg_time if parsed_mg_time > 0 else int(Time.get_unix_time_from_system())
 			
 		await load_player_inventory()
+		await load_player_rpg_state()
 		await sync_passive_income()
 		
 		_recalc_total_power()
@@ -307,27 +319,53 @@ func repair_generator_secure(gen_db_id: String) -> Dictionary:
 		return {"success": false, "error": "Generador no encontrado"}
 
 	var gtype = str(gen.get("generator_type", ""))
-	var req_cable_lvl = 1; var req_cable_qty = 6
-	var req_vent_lvl = 1; var req_vent_qty = 4
+	var tier = get_generator_tier(gtype)
+	
+	# Matriz de requisitos por Tier
+	var req_c = 0; var req_v = 0; var req_p = 0; var req_chip = 0; var req_cond = 0
+	match tier:
+		1: req_c = 6; req_v = 4
+		2: req_c = 8; req_v = 5
+		3: req_c = 10; req_v = 6; req_p = 4
+		4: req_c = 12; req_v = 8; req_chip = 4
+		5: req_c = 15; req_v = 10; req_chip = 6; req_cond = 4
 
-	if gtype in ["ecoflow_ultra", "cyber_tank"]:
-		req_cable_lvl = 4; req_cable_qty = 12; req_vent_lvl = 4; req_vent_qty = 8
-	elif gtype in ["ecoflow_thunder_pro", "pro_electrico"]:
-		req_cable_lvl = 3; req_cable_qty = 10; req_vent_lvl = 3; req_vent_qty = 6
-	elif gtype in ["ecoflow_spark_plus", "delta_mini", "panel_solar"]:
-		req_cable_lvl = 2; req_cable_qty = 8; req_vent_lvl = 2; req_vent_qty = 5
-
-	if get_part_quantity("cable", req_cable_lvl) < req_cable_qty or get_part_quantity("ventilador", req_vent_lvl) < req_vent_qty:
-		return {"success": false, "error": "No tienes suficientes piezas para reparar esta planta."}
+	if req_c > 0 and get_part_quantity("cable", tier) < req_c:
+		return {"success": false, "error": "Faltan Cables Nv.%d (%d requeridos)" % [tier, req_c]}
+	if req_v > 0 and get_part_quantity("ventilador", tier) < req_v:
+		return {"success": false, "error": "Faltan Ventiladores Nv.%d (%d requeridos)" % [tier, req_v]}
+	if req_p > 0 and get_part_quantity("panel", tier) < req_p:
+		return {"success": false, "error": "Faltan Paneles Nv.%d (%d requeridos)" % [tier, req_p]}
+	if req_chip > 0 and get_part_quantity("chip", tier) < req_chip:
+		return {"success": false, "error": "Faltan Microchips Nv.%d (%d requeridos)" % [tier, req_chip]}
+	if req_cond > 0 and get_part_quantity("condensador", tier) < req_cond:
+		return {"success": false, "error": "Faltan Condensadores Nv.%d (%d requeridos)" % [tier, req_cond]}
 
 	var res = await SupabaseClient.send_request("/rest/v1/rpc/repair_generator", HTTPClient.METHOD_POST, {"p_gen_id": gen_db_id}, true)
 	if res.get("success", false) and res.get("data", {}).get("success", false):
-		deduct_part_locally("cable", req_cable_lvl, req_cable_qty)
-		deduct_part_locally("ventilador", req_vent_lvl, req_vent_qty)
+		if req_c > 0: deduct_part_locally("cable", tier, req_c)
+		if req_v > 0: deduct_part_locally("ventilador", tier, req_v)
+		if req_p > 0: deduct_part_locally("panel", tier, req_p)
+		if req_chip > 0: deduct_part_locally("chip", tier, req_chip)
+		if req_cond > 0: deduct_part_locally("condensador", tier, req_cond)
+		
+		# Restaurar durabilidad local
+		gen["durability"] = 100.0
 		await load_player_inventory()
 		return {"success": true}
+		
 	var err = res.get("data", {}).get("error", "Error al reparar generador")
 	return {"success": false, "error": err}
+
+## Helper para obtener el Tier de cualquier generador
+func get_generator_tier(gtype: String) -> int:
+	match gtype:
+		"planta_meme", "dinamo_manual", "ecoflow_spark", "bateria_plomo": return 1
+		"ecoflow_spark_plus", "panel_solar", "molino_eolico": return 2
+		"delta_mini", "inverter_silencioso": return 3
+		"ecoflow_thunder_pro", "pro_electrico", "turbina_hidro": return 4
+		"ecoflow_ultra", "cyber_tank", "reactor_magnetico": return 5
+		_: return 1
 
 func upgrade_generator_secure(gen_db_id: String) -> Dictionary:
 	var gen: Dictionary = {}
@@ -344,22 +382,46 @@ func upgrade_generator_secure(gen_db_id: String) -> Dictionary:
 		return {"success": false, "error": "Ya se encuentra en el nivel máximo (Nivel 4)."}
 
 	var target_lvl = lvl + 1
-	var req_part_lvl = lvl
-	var req_c = 20 if target_lvl == 2 else 15
-	var req_v = 15
-	var req_p = 10 if target_lvl < 4 else 12
+	var gtype = str(gen.get("generator_type", ""))
+	var tier = get_generator_tier(gtype)
 
-	if get_part_quantity("cable", req_part_lvl) < req_c or get_part_quantity("ventilador", req_part_lvl) < req_v or get_part_quantity("panel", req_part_lvl) < req_p:
-		return {"success": false, "error": "Piezas insuficientes para subir a Nivel %d." % target_lvl}
+	# Escala de piezas según el nivel objetivo
+	var req_c = 10 if target_lvl == 2 else (16 if target_lvl == 3 else 24)
+	var req_v = 8 if target_lvl == 2 else (12 if target_lvl == 3 else 18)
+	var req_p = 6 if target_lvl == 2 else (10 if target_lvl == 3 else 14)
+	var req_chip = 4 if target_lvl == 2 else (6 if target_lvl == 3 else 8)
+	var req_cond = 2 if target_lvl == 2 else (3 if target_lvl == 3 else 4)
+
+	# Ajustar según el Tier del generador
+	if tier == 1: req_p = 0
+	if tier <= 2: req_chip = 0; req_cond = 0
+	if tier <= 4: req_cond = 0
+
+	# Comprobar existencias locales
+	if req_c > 0 and get_part_quantity("cable", tier) < req_c:
+		return {"success": false, "error": "Faltan Cables Nv.%d (%d requeridos)" % [tier, req_c]}
+	if req_v > 0 and get_part_quantity("ventilador", tier) < req_v:
+		return {"success": false, "error": "Faltan Ventiladores Nv.%d (%d requeridos)" % [tier, req_v]}
+	if req_p > 0 and get_part_quantity("panel", tier) < req_p:
+		return {"success": false, "error": "Faltan Paneles Nv.%d (%d requeridos)" % [tier, req_p]}
+	if req_chip > 0 and get_part_quantity("chip", tier) < req_chip:
+		return {"success": false, "error": "Faltan Microchips Nv.%d (%d requeridos)" % [tier, req_chip]}
+	if req_cond > 0 and get_part_quantity("condensador", tier) < req_cond:
+		return {"success": false, "error": "Faltan Condensadores Nv.%d (%d requeridos)" % [tier, req_cond]}
 
 	var res = await SupabaseClient.send_request("/rest/v1/rpc/upgrade_generator_level", HTTPClient.METHOD_POST, {"p_gen_id": gen_db_id}, true)
 	if res.get("success", false) and res.get("data", {}).get("success", false):
-		deduct_part_locally("cable", req_part_lvl, req_c)
-		deduct_part_locally("ventilador", req_part_lvl, req_v)
-		deduct_part_locally("panel", req_part_lvl, req_p)
+		if req_c > 0: deduct_part_locally("cable", tier, req_c)
+		if req_v > 0: deduct_part_locally("ventilador", tier, req_v)
+		if req_p > 0: deduct_part_locally("panel", tier, req_p)
+		if req_chip > 0: deduct_part_locally("chip", tier, req_chip)
+		if req_cond > 0: deduct_part_locally("condensador", tier, req_cond)
+		
+		gen["level"] = target_lvl
 		await load_player_inventory()
-		return {"success": true, "new_level": int(res["data"].get("new_level", target_lvl))}
-	var err = res.get("data", {}).get("error", "Error al subir de nivel")
+		return {"success": true, "new_level": target_lvl}
+		
+	var err = res.get("data", {}).get("error", "Error al subir de nivel") if typeof(res.get("data")) == TYPE_DICTIONARY else "Fallo de red"
 	return {"success": false, "error": err}
 
 # ====================================================================
@@ -430,19 +492,34 @@ func place_rack_in_slot(rack_db_id: String, slot_index: int) -> bool:
 	var res = await SupabaseClient.send_request("/rest/v1/rpc/place_rack_secure", HTTPClient.METHOD_POST, body, true)
 	return res.get("success", false) and typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].get("success", false)
 
-func place_generator_in_rack(gen_db_id: String, rack_db_id: String, slot_in_rack: int) -> bool:
-	var body = {"p_gen_id": gen_db_id, "p_rack_id": rack_db_id, "p_slot_in_rack": slot_in_rack}
-	var res = await SupabaseClient.send_request("/rest/v1/rpc/place_generator_secure", HTTPClient.METHOD_POST, body, true)
-	var ok: bool = res.get("success", false) and typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].get("success", false)
+func place_generator_in_rack(gen_db_id: String, rack_db_id: String, slot_in_rack: int) -> Dictionary:
+	var body = {
+		"p_gen_id": str(gen_db_id).strip_edges(),
+		"p_rack_id": str(rack_db_id).strip_edges(),
+		"p_slot_in_rack": slot_in_rack
+	}
 	
-	if ok:
+	var res = await SupabaseClient.send_request("/rest/v1/rpc/place_generator_secure", HTTPClient.METHOD_POST, body, true)
+	var is_ok: bool = res.get("success", false) and typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].get("success", false)
+	
+	if is_ok:
 		for g in player_generators:
 			var g_id = str(g.get("id", g.get("gen_id", "")))
-			if g_id == gen_db_id or gen_db_id == "":
+			if g_id == gen_db_id:
 				g["rack_id"] = rack_db_id
 				g["slot_in_rack"] = slot_in_rack
 				break
-	return ok
+		return {"success": true}
+	else:
+		var err_msg = "Error desconocido al colocar generador"
+		if typeof(res.get("data")) == TYPE_DICTIONARY:
+			var d = res["data"]
+			if d.has("error"): err_msg = str(d["error"])
+			elif d.has("message"): err_msg = str(d["message"])
+		elif res.has("error") and res["error"] != "":
+			err_msg = str(res["error"])
+			
+		return {"success": false, "error": err_msg}
 
 func unmount_generator(gen_db_id: String) -> bool:
 	var res = await SupabaseClient.send_request("/rest/v1/rpc/unmount_generator_secure", HTTPClient.METHOD_POST, {"p_gen_id": gen_db_id}, true)
@@ -516,6 +593,14 @@ func _on_signed_out() -> void:
 	saved_active_friend_name = ""
 	saved_is_chat_minimized = false
 	pending_friend_requests_count = 0
+	player_materials.clear()
+	player_talents.clear()
+	talent_points = 0
+	player_professions = {
+		"chatarrero_level": 0, "chatarrero_xp": 0,
+		"ingeniero_level": 0, "ingeniero_xp": 0,
+		"corredor_level": 0, "corredor_xp": 0
+	}
 
 func _parse_iso_datetime(dt_str: String) -> int:
 	if dt_str == "" or dt_str == "null":
@@ -524,3 +609,230 @@ func _parse_iso_datetime(dt_str: String) -> int:
 	if "+" in clean: clean = clean.split("+")[0]
 	if "." in clean: clean = clean.split(".")[0]
 	return int(Time.get_unix_time_from_datetime_string(clean))
+	
+## Envía la solicitud de fabricación al servidor y sincroniza inventarios de inmediato
+func craft_piece_secure(piece_type: String, tier: int, qty: int = 1) -> Dictionary:
+	var body = {
+		"p_piece_type": piece_type.strip_edges().to_lower(),
+		"p_tier": tier,
+		"p_quantity": qty
+	}
+	
+	var res: Dictionary = await SupabaseClient.send_request("/rest/v1/rpc/craft_workshop_piece", HTTPClient.METHOD_POST, body, true)
+	if res.get("success", false) and typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].get("success", false):
+		var d = res["data"]
+		var crafted_qty = int(d.get("quantity_crafted", qty))
+		var clean_type = piece_type.strip_edges().to_lower()
+		
+		# 1. Sumar pieza localmente
+		add_part_locally(clean_type, tier, crafted_qty)
+		
+		# 2. Descontar materiales de memoria local
+		match clean_type:
+			"cable":
+				deduct_material_locally("cobre", tier, 4 * qty)
+				deduct_material_locally("plastico", tier, 2 * qty)
+			"ventilador":
+				deduct_material_locally("hierro", tier, 4 * qty)
+				deduct_material_locally("plastico", tier, 2 * qty)
+			"panel":
+				deduct_material_locally("silicio", tier, 3 * qty)
+				deduct_material_locally("cobre", tier, 3 * qty)
+			"chip":
+				deduct_material_locally("silicio", tier, 4 * qty)
+				deduct_material_locally("cobre", tier, 2 * qty)
+				deduct_material_locally("hierro", tier, 1 * qty)
+			"condensador":
+				deduct_material_locally("cobre", tier, 5 * qty)
+				deduct_material_locally("silicio", tier, 5 * qty)
+				deduct_material_locally("hierro", tier, 5 * qty)
+				
+		# 3. Actualizar datos de Ingeniero
+		if d.has("new_level"):
+			player_professions["ingeniero_level"] = int(d["new_level"])
+			
+		return {"success": true, "data": d}
+	else:
+		var err = res.get("data", {}).get("error", "Error al fabricar") if typeof(res.get("data")) == TYPE_DICTIONARY else "Fallo de red"
+		return {"success": false, "error": err}
+
+# ====================================================================
+# SISTEMA RPG: GESTIÓN DE MATERIALES Y PROFESIONES
+# ====================================================================
+
+## Carga el estado RPG unificado desde Supabase
+func load_player_rpg_state() -> void:
+	if SupabaseClient.current_user_id == "": return
+	
+	var res: Dictionary = await SupabaseClient.send_request("/rest/v1/rpc/get_player_rpg_state", HTTPClient.METHOD_POST, {}, true)
+	if res.get("success", false) and typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].get("success", false):
+		var d = res["data"]
+		talent_points = int(d.get("talent_points", 0))
+		player_materials = d.get("materials", [])
+		player_professions = d.get("professions", player_professions)
+		player_talents = d.get("talents", [])
+
+## Consulta la cantidad de un material específico
+func get_material_quantity(mat_type: String, tier: int) -> int:
+	var clean_type = mat_type.strip_edges().to_lower()
+	for m in player_materials:
+		if str(m.get("material_type", "")).strip_edges().to_lower() == clean_type and int(m.get("tier", 1)) == tier:
+			return int(m.get("quantity", 0))
+	return 0
+
+## Agrega materiales inmediatamente en memoria local (ej: drop de minijuegos)
+func add_material_locally(mat_type: String, tier: int, qty: int) -> void:
+	var clean_type = mat_type.strip_edges().to_lower()
+	var found = false
+	for m in player_materials:
+		if str(m.get("material_type", "")).strip_edges().to_lower() == clean_type and int(m.get("tier", 1)) == tier:
+			m["quantity"] = int(m.get("quantity", 0)) + qty
+			found = true
+			break
+	if not found:
+		player_materials.append({
+			"material_type": clean_type,
+			"tier": tier,
+			"quantity": qty
+		})
+
+## Descuenta materiales en memoria local (ej: crafteo en taller)
+func deduct_material_locally(mat_type: String, tier: int, qty: int) -> void:
+	var clean_type = mat_type.strip_edges().to_lower()
+	for m in player_materials:
+		if str(m.get("material_type", "")).strip_edges().to_lower() == clean_type and int(m.get("tier", 1)) == tier:
+			m["quantity"] = maxi(0, int(m.get("quantity", 0)) - qty)
+			break
+
+## Devuelve el nivel actual de una profesión (0 a 25)
+func get_profession_level(prof_name: String) -> int:
+	var key = prof_name.to_lower() + "_level"
+	return int(player_professions.get(key, 0))
+
+## Devuelve la XP acumulada en una profesión
+func get_profession_xp(prof_name: String) -> int:
+	var key = prof_name.to_lower() + "_xp"
+	return int(player_professions.get(key, 0))
+	
+## Procesa las recompensas RPG de minijuegos y genera el texto para el mensaje de victoria
+func process_minigame_rpg_rewards(data: Dictionary) -> String:
+	var msg: String = ""
+	
+	# 1. Procesar Material obtenido
+	if bool(data.get("has_dropped_material", false)):
+		var mat_type: String = str(data.get("material_type", "cobre")).strip_edges().to_lower()
+		var tier: int = int(data.get("material_tier", 1))
+		var qty: int = int(data.get("material_qty", 1))
+		
+		# Sumar de inmediato a la memoria local
+		add_material_locally(mat_type, tier, qty)
+		
+		var mat_names = {
+			"cobre": "Cobre Bruto",
+			"plastico": "Plástico Reciclado",
+			"silicio": "Silicio / Cuarzo",
+			"hierro": "Chatarra de Hierro"
+		}
+		var display_name = mat_names.get(mat_type, mat_type.capitalize())
+		msg += "\n📦 Botín: +%d %s (Tier %d)" % [qty, display_name, tier]
+		
+	# 2. Procesar XP y Nivel de Chatarrero
+	var xp_gained: int = int(data.get("chatarrero_xp_gained", 0))
+	if xp_gained > 0:
+		msg += "\n⭐ +%d XP de Chatarrero" % xp_gained
+		
+	if bool(data.get("chatarrero_leveled_up", false)):
+		var new_lvl: int = int(data.get("new_chatarrero_level", 1))
+		player_professions["chatarrero_level"] = new_lvl
+		msg += "\n🎉 ¡SUBISTE A NIVEL %d DE CHATARRERO!" % new_lvl
+		
+	return msg
+	
+## Obtiene la lista de contratos diarios del servidor
+func get_daily_contracts_secure() -> Array:
+	var res: Dictionary = await SupabaseClient.send_request("/rest/v1/rpc/get_or_create_daily_contracts", HTTPClient.METHOD_POST, {}, true)
+	if res.get("success", false) and typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].get("success", false):
+		return res["data"].get("contracts", [])
+	return []
+
+## Entrega el contrato, descuenta los recursos y actualiza monedas en memoria local
+func deliver_contract_secure(contract_dict: Dictionary) -> Dictionary:
+	var c_id = str(contract_dict.get("id", ""))
+	var res: Dictionary = await SupabaseClient.send_request("/rest/v1/rpc/deliver_daily_contract", HTTPClient.METHOD_POST, {"p_contract_id": c_id}, true)
+	
+	if res.get("success", false) and typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].get("success", false):
+		var d = res["data"]
+		
+		# 1. Deducir recursos localmente
+		var p_type = str(contract_dict.get("req_piece_type", ""))
+		var p_tier = int(contract_dict.get("req_piece_tier", 1))
+		var p_qty = int(contract_dict.get("req_piece_qty", 1))
+		var req_w = float(contract_dict.get("req_watt", 0.0))
+		
+		deduct_part_locally(p_type, p_tier, p_qty)
+		watt = maxf(0.0, watt - req_w)
+		
+		# 2. Sumar recompensas
+		talent_points += int(d.get("reward_talent_points", 1))
+		casino_tokens += int(d.get("reward_casino_tokens", 1))
+		
+		EventBus.currencies_updated.emit(watt, kilowat)
+		return {"success": true, "data": d}
+	else:
+		var err = res.get("data", {}).get("error", "Error al entregar") if typeof(res.get("data")) == TYPE_DICTIONARY else "Fallo de red"
+		return {"success": false, "error": err}
+		
+## Devuelve el nivel desbloqueado de un talento específico (0 si no lo tiene, max 3)
+func get_talent_level(talent_id: String) -> int:
+	for t in player_talents:
+		if str(t.get("talent_id", "")) == talent_id:
+			return int(t.get("level", 1))
+	return 0
+
+## Envía la mejora al servidor y extrae el error real si algo falla
+func upgrade_talent_secure(talent_id: String, branch: String, cost_points: int, cost_watt: float, prereq_id: String = "") -> Dictionary:
+	var body = {
+		"p_talent_id": talent_id,
+		"p_branch": branch,
+		"p_cost_points": cost_points,
+		"p_cost_watt": cost_watt,
+		"p_prereq_id": prereq_id
+	}
+	
+	var res: Dictionary = await SupabaseClient.send_request("/rest/v1/rpc/upgrade_player_talent", HTTPClient.METHOD_POST, body, true)
+	
+	if res.get("success", false) and typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].get("success", false):
+		var d = res["data"]
+		var new_lvl = int(d.get("new_level", 1))
+		
+		# Deducir en memoria local
+		talent_points = maxi(0, talent_points - cost_points)
+		watt = maxf(0.0, watt - cost_watt)
+		EventBus.currencies_updated.emit(watt, kilowat)
+		
+		var found = false
+		for t in player_talents:
+			if str(t.get("talent_id", "")) == talent_id:
+				t["level"] = new_lvl
+				found = true
+				break
+		if not found:
+			player_talents.append({
+				"talent_id": talent_id,
+				"talent_branch": branch,
+				"level": new_lvl
+			})
+			
+		return {"success": true, "data": d}
+	else:
+		# Extraer el error real de Supabase (sea "error", "message" o "msg")
+		var err_msg = "Error de conexión"
+		if typeof(res.get("data")) == TYPE_DICTIONARY:
+			var d = res["data"]
+			if d.has("error"): err_msg = str(d["error"])
+			elif d.has("message"): err_msg = str(d["message"])
+			elif d.has("msg"): err_msg = str(d["msg"])
+		elif res.has("error") and res["error"] != "":
+			err_msg = str(res["error"])
+			
+		return {"success": false, "error": err_msg}

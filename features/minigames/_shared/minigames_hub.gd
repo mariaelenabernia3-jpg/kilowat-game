@@ -74,6 +74,12 @@ func _update_hud() -> void:
 		kilowat_label.text = "%.6f" % GameManager.kilowat
 	if chip_label and is_instance_valid(chip_label):
 		chip_label.text = "%.0f" % GameManager.casino_tokens
+		
+	# Actualizar el título con el rango del jugador
+	var chat_lvl: int = GameManager.get_profession_level("chatarrero")
+	var title_node = find_child("Title", true, false)
+	if title_node and is_instance_valid(title_node):
+		title_node.text = "⚡ CENTRAL DE MINIJUEGOS  |  🛠️ Chatarrero Nv. %d / 25" % chat_lvl
 
 func _on_back_pressed() -> void:
 	get_tree().change_scene_to_file("res://features/room/main_room.tscn")

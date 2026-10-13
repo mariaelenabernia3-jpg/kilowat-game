@@ -481,19 +481,35 @@ func _get_premium_reward_info(level: int) -> Dictionary:
 		20: return {"type": "generator", "name": "Pro Eléctrico", "texture_path": "res://assets/sprites/generators/pro_electrico.png", "rarity": "LEGENDARIO TEMPORADA 1", "power": "0.000000800 KWP", "income": "+0.000000800 kW/min", "description": "«Cúspide tecnológica del pase de batalla: 0.000000800 kW/min.»"}
 		_: return {"type": "watt", "amount_text": "+1.0 W"}
 
+# ====================================================================
+# PESTAÑA: MISIONES DEL PASE + CONTRATOS DE LA RED (COEXISTENCIA)
+# ====================================================================
 func _build_quests_ui() -> void:
 	if is_loading_quests: return
 	is_loading_quests = true
+
+	# 1. Obtener Misiones clásicas del Pase de Batalla (Minijuegos/Online)
+	var res_bp = await SupabaseClient.send_request("/rest/v1/rpc/get_daily_quests_status", HTTPClient.METHOD_POST, {}, true)
 	
-	var res = await SupabaseClient.send_request("/rest/v1/rpc/get_daily_quests_status", HTTPClient.METHOD_POST, {}, true)
+	# 2. Obtener Contratos Industriales (Piezas del Taller y Watts)
+	var contracts: Array = await GameManager.get_daily_contracts_secure()
+	
 	is_loading_quests = false
 
-	# Limpiar hijos únicamente después de recibir los datos (evita duplicados en PC)
 	for child in quests_list.get_children():
 		child.queue_free()
 
-	if res.get("success", false) and typeof(res["data"]) == TYPE_DICTIONARY:
-		var q_array = res["data"].get("quests", [])
+	# ----------------------------------------------------------------
+	# SECCIÓN 1: MISIONES DE JUEGO (XP PARA EL PASE DE BATALLA)
+	# ----------------------------------------------------------------
+	var sec1_header := Label.new()
+	sec1_header.text = "🎮 MISIONES DE JUEGO (SUBIR EL PASE DE TEMPORADA)"
+	sec1_header.add_theme_font_size_override("font_size", 13)
+	sec1_header.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
+	quests_list.add_child(sec1_header)
+
+	if res_bp.get("success", false) and typeof(res_bp["data"]) == TYPE_DICTIONARY:
+		var q_array = res_bp["data"].get("quests", [])
 		for q in q_array:
 			var panel := PanelContainer.new()
 			var p_st := StyleBoxFlat.new()
@@ -501,57 +517,174 @@ func _build_quests_ui() -> void:
 			p_st.border_color = Color(0.2, 0.35, 0.55, 0.7)
 			p_st.set_border_width_all(1); p_st.set_corner_radius_all(8)
 			panel.add_theme_stylebox_override("panel", p_st)
-			
+
 			var pm := MarginContainer.new()
-			pm.add_theme_constant_override("margin_left", 16); pm.add_theme_constant_override("margin_top", 12)
-			pm.add_theme_constant_override("margin_right", 16); pm.add_theme_constant_override("margin_bottom", 12)
+			pm.add_theme_constant_override("margin_left", 14); pm.add_theme_constant_override("margin_top", 10)
+			pm.add_theme_constant_override("margin_right", 14); pm.add_theme_constant_override("margin_bottom", 10)
 			panel.add_child(pm)
-			
+
 			var hbox := HBoxContainer.new()
-			hbox.add_theme_constant_override("separation", 16)
+			hbox.add_theme_constant_override("separation", 14)
 			pm.add_child(hbox)
-			
+
 			var vbox := VBoxContainer.new()
 			vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			
+			vbox.add_theme_constant_override("separation", 3)
+
 			var q_title := Label.new()
-			q_title.text = "%s (+%d XP)" % [str(q.get("title", "")), int(q.get("reward_xp", 0))]
-			q_title.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
+			q_title.text = "%s (+%d XP Pase)" % [str(q.get("title", "")), int(q.get("reward_xp", 0))]
+			q_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
 			q_title.add_theme_font_size_override("font_size", 13)
 			vbox.add_child(q_title)
-			
+
 			var q_desc := Label.new()
 			q_desc.text = str(q.get("description", ""))
 			q_desc.add_theme_font_size_override("font_size", 11)
-			q_desc.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
+			q_desc.add_theme_color_override("font_color", Color(0.75, 0.8, 0.9))
 			vbox.add_child(q_desc)
-			
+
 			var prog_lbl := Label.new()
 			prog_lbl.text = "Progreso: %d / %d" % [int(q.get("current_progress", 0)), int(q.get("target_count", 1))]
 			prog_lbl.add_theme_font_size_override("font_size", 10)
-			prog_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+			prog_lbl.add_theme_color_override("font_color", Color(0.4, 1.0, 0.6))
 			vbox.add_child(prog_lbl)
 			hbox.add_child(vbox)
-			
+
 			var q_btn := Button.new()
-			q_btn.custom_minimum_size = Vector2(120, 36)
+			q_btn.custom_minimum_size = Vector2(125, 34)
 			q_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 			var is_comp = bool(q.get("is_completed", false))
 			var is_clm = bool(q.get("is_claimed", false))
-			
+
 			if is_clm:
 				q_btn.text = "✓ Reclamada"
 				q_btn.disabled = true
 			elif is_comp:
 				q_btn.text = "⚡ Reclamar XP"
+				q_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 				var q_id = str(q.get("quest_id", ""))
 				q_btn.pressed.connect(func(): _claim_quest(q_id, q_btn))
 			else:
 				q_btn.text = "En curso"
 				q_btn.disabled = true
 			hbox.add_child(q_btn)
-			
+
 			quests_list.add_child(panel)
+
+	# Separador visual entre sistemas
+	var hsep := HSeparator.new()
+	quests_list.add_child(hsep)
+
+	# ----------------------------------------------------------------
+	# SECCIÓN 2: CONTRATOS DE LA RED (PUNTOS DE TALENTO Y FICHAS)
+	# ----------------------------------------------------------------
+	var sec2_header := Label.new()
+	sec2_header.text = "📜 CONTRATOS DE LA RED ELÉCTRICA (TALENTOS & FICHAS)"
+	sec2_header.add_theme_font_size_override("font_size", 13)
+	sec2_header.add_theme_color_override("font_color", Color(1.0, 0.85, 0.25))
+	quests_list.add_child(sec2_header)
+
+	if contracts.is_empty():
+		var empty_lbl := Label.new()
+		empty_lbl.text = "No hay contratos industriales disponibles hoy."
+		empty_lbl.add_theme_font_size_override("font_size", 11)
+		quests_list.add_child(empty_lbl)
+		return
+
+	for c in contracts:
+		var panel := PanelContainer.new()
+		var p_st := StyleBoxFlat.new()
+		p_st.bg_color = Color(0.08, 0.10, 0.15, 0.95)
+		p_st.border_color = Color(1.0, 0.75, 0.2, 0.7)
+		p_st.set_border_width_all(1); p_st.set_corner_radius_all(8)
+		panel.add_theme_stylebox_override("panel", p_st)
+
+		var pm := MarginContainer.new()
+		pm.add_theme_constant_override("margin_left", 14); pm.add_theme_constant_override("margin_top", 10)
+		pm.add_theme_constant_override("margin_right", 14); pm.add_theme_constant_override("margin_bottom", 10)
+		panel.add_child(pm)
+
+		var hbox := HBoxContainer.new()
+		hbox.add_theme_constant_override("separation", 14)
+		pm.add_child(hbox)
+
+		var vbox := VBoxContainer.new()
+		vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		vbox.add_theme_constant_override("separation", 3)
+
+		var c_title := Label.new()
+		c_title.text = "📋 " + str(c.get("title", "Contrato"))
+		c_title.add_theme_color_override("font_color", Color(1.0, 0.88, 0.3))
+		c_title.add_theme_font_size_override("font_size", 13)
+		vbox.add_child(c_title)
+
+		var c_desc := Label.new()
+		c_desc.text = str(c.get("description", ""))
+		c_desc.add_theme_font_size_override("font_size", 11)
+		c_desc.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
+		vbox.add_child(c_desc)
+
+		# Comprobación de requisitos
+		var p_type = str(c.get("req_piece_type", ""))
+		var p_tier = int(c.get("req_piece_tier", 1))
+		var p_qty = int(c.get("req_piece_qty", 1))
+		var req_w = float(c.get("req_watt", 0.0))
+
+		var have_p = GameManager.get_part_quantity(p_type, p_tier)
+		var have_w = GameManager.watt
+		var can_deliver = (have_p >= p_qty) and (have_w >= req_w)
+
+		var req_lbl := Label.new()
+		var p_names = {"cable": "Cables", "ventilador": "Ventiladores", "panel": "Paneles", "chip": "Microchips", "condensador": "Condensadores"}
+		var p_display = p_names.get(p_type, p_type.capitalize())
+		req_lbl.text = "Requiere: %s Nv.%d (%d/%d %s) | Watts (%.3f/%.3f %s)" % [
+			p_display, p_tier, have_p, p_qty, "✓" if have_p >= p_qty else "✕",
+			have_w, req_w, "✓" if have_w >= req_w else "✕"
+		]
+		req_lbl.add_theme_font_size_override("font_size", 10)
+		req_lbl.add_theme_color_override("font_color", Color(0.4, 1.0, 0.6) if can_deliver else Color(1.0, 0.45, 0.45))
+		vbox.add_child(req_lbl)
+
+		var rew_lbl := Label.new()
+		rew_lbl.text = "Recompensa: +%d Ptos. Talento 🏅 | +%d Fichas Casino 🪙 | +%d XP ⭐" % [
+			int(c.get("reward_talent_points", 1)),
+			int(c.get("reward_casino_tokens", 1)),
+			int(c.get("reward_xp", 100))
+		]
+		rew_lbl.add_theme_font_size_override("font_size", 10)
+		rew_lbl.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
+		vbox.add_child(rew_lbl)
+
+		hbox.add_child(vbox)
+
+		# Botón Entregar
+		var q_btn := Button.new()
+		q_btn.custom_minimum_size = Vector2(135, 36)
+		q_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		var is_delivered = bool(c.get("is_delivered", false))
+
+		if is_delivered:
+			q_btn.text = "✓ Entregado"
+			q_btn.disabled = true
+		elif can_deliver:
+			q_btn.text = "⚡ Entregar"
+			q_btn.disabled = false
+			q_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+			var c_copy = c.duplicate()
+			q_btn.pressed.connect(func():
+				q_btn.disabled = true; q_btn.text = "..."
+				var res = await GameManager.deliver_contract_secure(c_copy)
+				if res.get("success", false):
+					_build_quests_ui()
+				else:
+					q_btn.disabled = false; q_btn.text = "Reintentar"
+			)
+		else:
+			q_btn.text = "🔒 Faltan Piezas"
+			q_btn.disabled = true
+
+		hbox.add_child(q_btn)
+		quests_list.add_child(panel)
 
 func _claim_quest(quest_id: String, btn: Button) -> void:
 	btn.disabled = true

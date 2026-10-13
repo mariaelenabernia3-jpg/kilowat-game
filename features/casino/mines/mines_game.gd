@@ -93,8 +93,11 @@ func _on_mines_slider_changed(val: float) -> void:
 	_update_stats_display()
 
 func _on_bet_input_changed(new_text: String) -> void:
-	var val = float(new_text)
-	current_bet = maxf(1.0, val)
+	if not new_text.is_valid_float():
+		current_bet = 1.0
+		return
+	var val: float = float(new_text)
+	current_bet = clampf(val, 1.0, maxf(1.0, GameManager.casino_tokens))
 
 func _adjust_bet(mult: float) -> void: _set_bet(current_bet * mult)
 func _set_bet(val: float) -> void:
@@ -110,11 +113,19 @@ func _update_stats_display() -> void:
 
 func _calc_dampened_multiplier(mines: int, opened: int) -> float:
 	if opened <= 0: return 1.0
+	var safe_mines = clampi(mines, MIN_MINES, MAX_MINES)
 	var fair: float = 1.0
+	
 	for i in range(opened):
-		var denom: float = float(TOTAL_TILES - mines - i)
-		if denom <= 0.0: break
-		fair *= float(TOTAL_TILES - i) / denom
+		var remaining_tiles: float = float(TOTAL_TILES - i)
+		var remaining_safe_tiles: float = float(TOTAL_TILES - safe_mines - i)
+		
+		# Protección estricta contra división por cero
+		if remaining_safe_tiles <= 0.0 or remaining_tiles <= 0.0:
+			break
+			
+		fair *= remaining_tiles / remaining_safe_tiles
+		
 	var dampened: float = 1.0 + (fair - 1.0) * 0.60
 	return maxf(1.02, snappedf(dampened, 0.01))
 

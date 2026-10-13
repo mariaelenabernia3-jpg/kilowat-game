@@ -11,7 +11,7 @@ git add .
 
 set "mensaje="
 set /p "mensaje=Escribe que cambiaste (o presiona ENTER para continuar): "
-if not defined mensaje set "mensaje=Actualizacion Parche con taller y correcciones"
+if not defined mensaje set "mensaje=Actualizacion..."
 
 echo.
 echo Creando punto de guardado (commit)...
