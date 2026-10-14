@@ -49,7 +49,6 @@ var clock_timer: float = 0.0
 var claimed_free_levels: Array = []
 var claimed_premium_levels: Array = []
 
-# Cerrojos para evitar llamadas concurrentes en PC
 var is_loading_pass_data: bool = false
 var is_loading_quests: bool = false
 
@@ -67,7 +66,6 @@ func _ready() -> void:
 	pass_tab_button.pressed.connect(_show_tracks)
 	quests_tab_button.pressed.connect(_show_quests)
 	
-	# Soporte para la rueda del ratón en PC sobre la lista horizontal de niveles
 	if tracks_scroll:
 		tracks_scroll.gui_input.connect(_on_tracks_scroll_gui_input)
 	
@@ -84,7 +82,6 @@ func _process(delta: float) -> void:
 
 func _input(event: InputEvent) -> void:
 	if not visible: return
-	# Tecla ESC en PC cierra el modal activo o la ventana del pase
 	if event is InputEventKey and event.pressed and not event.is_echo():
 		if event.keycode == KEY_ESCAPE:
 			if reward_preview_modal and reward_preview_modal.visible:
@@ -95,7 +92,6 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 
 func _on_tracks_scroll_gui_input(event: InputEvent) -> void:
-	# En PC, deslizar los 20 niveles horizontalmente con la rueda del ratón
 	if event is InputEventMouseButton and tracks_scroll:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			tracks_scroll.scroll_horizontal = maxi(0, tracks_scroll.scroll_horizontal - 90)
@@ -207,7 +203,7 @@ func _build_tracks_ui() -> void:
 		col.custom_minimum_size = Vector2(140, 360)
 		col.add_theme_constant_override("separation", 8)
 		
-		# 1. PISTA PREMIUM (Arriba)
+		# 1. PISTA PREMIUM
 		var prem_card := PanelContainer.new()
 		prem_card.custom_minimum_size = Vector2(140, 150)
 		var p_st := StyleBoxFlat.new()
@@ -238,7 +234,7 @@ func _build_tracks_ui() -> void:
 		_populate_reward_box(pvbox, _get_premium_reward_info(lvl), not is_premium, lvl, true, is_prem_claimed, can_claim_prem)
 		col.add_child(prem_card)
 		
-		# 2. INSIGNIA CENTRAL DE NIVEL
+		# 2. INSIGNIA CENTRAL
 		var lvl_pill := PanelContainer.new()
 		lvl_pill.custom_minimum_size = Vector2(0, 24)
 		var lp_st := StyleBoxFlat.new()
@@ -257,7 +253,7 @@ func _build_tracks_ui() -> void:
 		lvl_pill.add_child(lvl_lbl)
 		col.add_child(lvl_pill)
 		
-		# 3. PISTA GRATUITA (Abajo)
+		# 3. PISTA GRATIS
 		var free_card := PanelContainer.new()
 		free_card.custom_minimum_size = Vector2(140, 150)
 		var f_st := StyleBoxFlat.new()
@@ -482,102 +478,118 @@ func _get_premium_reward_info(level: int) -> Dictionary:
 		_: return {"type": "watt", "amount_text": "+1.0 W"}
 
 # ====================================================================
-# PESTAÑA: MISIONES DEL PASE + CONTRATOS DE LA RED (COEXISTENCIA)
+# PESTAÑA: MISIONES DEL PASE Y CONTRATOS (SEGURO Y BLINDADO)
 # ====================================================================
 func _build_quests_ui() -> void:
 	if is_loading_quests: return
 	is_loading_quests = true
 
-	# 1. Obtener Misiones clásicas del Pase de Batalla (Minijuegos/Online)
-	var res_bp = await SupabaseClient.send_request("/rest/v1/rpc/get_daily_quests_status", HTTPClient.METHOD_POST, {}, true)
-	
-	# 2. Obtener Contratos Industriales (Piezas del Taller y Watts)
-	var contracts: Array = await GameManager.get_daily_contracts_secure()
-	
-	is_loading_quests = false
-
 	for child in quests_list.get_children():
 		child.queue_free()
 
-	# ----------------------------------------------------------------
-	# SECCIÓN 1: MISIONES DE JUEGO (XP PARA EL PASE DE BATALLA)
-	# ----------------------------------------------------------------
+	var loading_lbl := Label.new()
+	loading_lbl.text = "Cargando misiones y contratos..."
+	loading_lbl.add_theme_font_size_override("font_size", 12)
+	loading_lbl.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
+	quests_list.add_child(loading_lbl)
+
+	# 1. Obtener Misiones diarias clásicas
+	var res_bp = await SupabaseClient.send_request("/rest/v1/rpc/get_daily_quests_status", HTTPClient.METHOD_POST, {}, true)
+	
+	# 2. Obtener Contratos Industriales (Llamada segura)
+	var contracts: Array = []
+	if GameManager.has_method("get_daily_contracts_secure"):
+		contracts = await GameManager.get_daily_contracts_secure()
+
+	is_loading_quests = false
+
+	# Limpiar el aviso de carga
+	if is_instance_valid(loading_lbl):
+		loading_lbl.queue_free()
+
+	# SECCIÓN 1: MISIONES DE JUEGO (XP PARA EL PASE)
 	var sec1_header := Label.new()
-	sec1_header.text = "🎮 MISIONES DE JUEGO (SUBIR EL PASE DE TEMPORADA)"
+	sec1_header.text = "🎮 MISIONES DE JUEGO (XP DEL PASE)"
 	sec1_header.add_theme_font_size_override("font_size", 13)
 	sec1_header.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
 	quests_list.add_child(sec1_header)
 
+	var has_bp_quests: bool = false
 	if res_bp.get("success", false) and typeof(res_bp["data"]) == TYPE_DICTIONARY:
 		var q_array = res_bp["data"].get("quests", [])
-		for q in q_array:
-			var panel := PanelContainer.new()
-			var p_st := StyleBoxFlat.new()
-			p_st.bg_color = Color(0.08, 0.10, 0.15, 0.95)
-			p_st.border_color = Color(0.2, 0.35, 0.55, 0.7)
-			p_st.set_border_width_all(1); p_st.set_corner_radius_all(8)
-			panel.add_theme_stylebox_override("panel", p_st)
+		if q_array.size() > 0:
+			has_bp_quests = true
+			for q in q_array:
+				var panel := PanelContainer.new()
+				var p_st := StyleBoxFlat.new()
+				p_st.bg_color = Color(0.08, 0.10, 0.15, 0.95)
+				p_st.border_color = Color(0.2, 0.35, 0.55, 0.7)
+				p_st.set_border_width_all(1); p_st.set_corner_radius_all(8)
+				panel.add_theme_stylebox_override("panel", p_st)
 
-			var pm := MarginContainer.new()
-			pm.add_theme_constant_override("margin_left", 14); pm.add_theme_constant_override("margin_top", 10)
-			pm.add_theme_constant_override("margin_right", 14); pm.add_theme_constant_override("margin_bottom", 10)
-			panel.add_child(pm)
+				var pm := MarginContainer.new()
+				pm.add_theme_constant_override("margin_left", 14); pm.add_theme_constant_override("margin_top", 10)
+				pm.add_theme_constant_override("margin_right", 14); pm.add_theme_constant_override("margin_bottom", 10)
+				panel.add_child(pm)
 
-			var hbox := HBoxContainer.new()
-			hbox.add_theme_constant_override("separation", 14)
-			pm.add_child(hbox)
+				var hbox := HBoxContainer.new()
+				hbox.add_theme_constant_override("separation", 14)
+				pm.add_child(hbox)
 
-			var vbox := VBoxContainer.new()
-			vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			vbox.add_theme_constant_override("separation", 3)
+				var vbox := VBoxContainer.new()
+				vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				vbox.add_theme_constant_override("separation", 3)
 
-			var q_title := Label.new()
-			q_title.text = "%s (+%d XP Pase)" % [str(q.get("title", "")), int(q.get("reward_xp", 0))]
-			q_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
-			q_title.add_theme_font_size_override("font_size", 13)
-			vbox.add_child(q_title)
+				var q_title := Label.new()
+				q_title.text = "%s (+%d XP)" % [str(q.get("title", "")), int(q.get("reward_xp", 0))]
+				q_title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+				q_title.add_theme_font_size_override("font_size", 13)
+				vbox.add_child(q_title)
 
-			var q_desc := Label.new()
-			q_desc.text = str(q.get("description", ""))
-			q_desc.add_theme_font_size_override("font_size", 11)
-			q_desc.add_theme_color_override("font_color", Color(0.75, 0.8, 0.9))
-			vbox.add_child(q_desc)
+				var q_desc := Label.new()
+				q_desc.text = str(q.get("description", ""))
+				q_desc.add_theme_font_size_override("font_size", 11)
+				q_desc.add_theme_color_override("font_color", Color(0.75, 0.8, 0.9))
+				vbox.add_child(q_desc)
 
-			var prog_lbl := Label.new()
-			prog_lbl.text = "Progreso: %d / %d" % [int(q.get("current_progress", 0)), int(q.get("target_count", 1))]
-			prog_lbl.add_theme_font_size_override("font_size", 10)
-			prog_lbl.add_theme_color_override("font_color", Color(0.4, 1.0, 0.6))
-			vbox.add_child(prog_lbl)
-			hbox.add_child(vbox)
+				var prog_lbl := Label.new()
+				prog_lbl.text = "Progreso: %d / %d" % [int(q.get("current_progress", 0)), int(q.get("target_count", 1))]
+				prog_lbl.add_theme_font_size_override("font_size", 10)
+				prog_lbl.add_theme_color_override("font_color", Color(0.4, 1.0, 0.6))
+				vbox.add_child(prog_lbl)
+				hbox.add_child(vbox)
 
-			var q_btn := Button.new()
-			q_btn.custom_minimum_size = Vector2(125, 34)
-			q_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			var is_comp = bool(q.get("is_completed", false))
-			var is_clm = bool(q.get("is_claimed", false))
+				var q_btn := Button.new()
+				q_btn.custom_minimum_size = Vector2(125, 34)
+				q_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				var is_comp = bool(q.get("is_completed", false))
+				var is_clm = bool(q.get("is_claimed", false))
 
-			if is_clm:
-				q_btn.text = "✓ Reclamada"
-				q_btn.disabled = true
-			elif is_comp:
-				q_btn.text = "⚡ Reclamar XP"
-				q_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-				var q_id = str(q.get("quest_id", ""))
-				q_btn.pressed.connect(func(): _claim_quest(q_id, q_btn))
-			else:
-				q_btn.text = "En curso"
-				q_btn.disabled = true
-			hbox.add_child(q_btn)
+				if is_clm:
+					q_btn.text = "✓ Reclamada"
+					q_btn.disabled = true
+				elif is_comp:
+					q_btn.text = "⚡ Reclamar XP"
+					q_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+					var q_id = str(q.get("quest_id", ""))
+					q_btn.pressed.connect(func(): _claim_quest(q_id, q_btn))
+				else:
+					q_btn.text = "En curso"
+					q_btn.disabled = true
+				hbox.add_child(q_btn)
 
-			quests_list.add_child(panel)
+				quests_list.add_child(panel)
 
-	# Separador visual entre sistemas
+	if not has_bp_quests:
+		var no_q_lbl := Label.new()
+		no_q_lbl.text = "No hay misiones activas por el momento."
+		no_q_lbl.add_theme_font_size_override("font_size", 11)
+		quests_list.add_child(no_q_lbl)
+
 	var hsep := HSeparator.new()
 	quests_list.add_child(hsep)
 
-	# ----------------------------------------------------------------
-	# SECCIÓN 2: CONTRATOS DE LA RED (PUNTOS DE TALENTO Y FICHAS)
-	# ----------------------------------------------------------------
+	# SECCIÓN 2: CONTRATOS DE LA RED ELÉCTRICA
 	var sec2_header := Label.new()
 	sec2_header.text = "📜 CONTRATOS DE LA RED ELÉCTRICA (TALENTOS & FICHAS)"
 	sec2_header.add_theme_font_size_override("font_size", 13)
@@ -624,13 +636,12 @@ func _build_quests_ui() -> void:
 		c_desc.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
 		vbox.add_child(c_desc)
 
-		# Comprobación de requisitos
 		var p_type = str(c.get("req_piece_type", ""))
 		var p_tier = int(c.get("req_piece_tier", 1))
 		var p_qty = int(c.get("req_piece_qty", 1))
 		var req_w = float(c.get("req_watt", 0.0))
 
-		var have_p = GameManager.get_part_quantity(p_type, p_tier)
+		var have_p = GameManager.get_part_quantity(p_type, p_tier) if GameManager.has_method("get_part_quantity") else 0
 		var have_w = GameManager.watt
 		var can_deliver = (have_p >= p_qty) and (have_w >= req_w)
 
@@ -657,7 +668,6 @@ func _build_quests_ui() -> void:
 
 		hbox.add_child(vbox)
 
-		# Botón Entregar
 		var q_btn := Button.new()
 		q_btn.custom_minimum_size = Vector2(135, 36)
 		q_btn.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -673,11 +683,12 @@ func _build_quests_ui() -> void:
 			var c_copy = c.duplicate()
 			q_btn.pressed.connect(func():
 				q_btn.disabled = true; q_btn.text = "..."
-				var res = await GameManager.deliver_contract_secure(c_copy)
-				if res.get("success", false):
-					_build_quests_ui()
-				else:
-					q_btn.disabled = false; q_btn.text = "Reintentar"
+				if GameManager.has_method("deliver_contract_secure"):
+					var res = await GameManager.deliver_contract_secure(c_copy)
+					if res.get("success", false):
+						_build_quests_ui()
+					else:
+						q_btn.disabled = false; q_btn.text = "Reintentar"
 			)
 		else:
 			q_btn.text = "🔒 Faltan Piezas"

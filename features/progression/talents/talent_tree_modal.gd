@@ -4,7 +4,6 @@ extends Control
 
 signal talents_updated()
 
-# Nodos del lienzo
 var canvas_view: Control
 var circuit_drawer: Control
 var inspector_panel: PanelContainer
@@ -12,7 +11,6 @@ var points_label: Label
 var watt_label: Label
 var status_lbl: Label
 
-# Inspector Lateral
 var insp_title: Label
 var insp_branch: Label
 var insp_level: Label
@@ -21,7 +19,6 @@ var insp_cost: Label
 var insp_req: Label
 var insp_buy_btn: Button
 
-# Pan & Zoom del Árbol
 var tree_offset: Vector2 = Vector2.ZERO
 var tree_zoom: float = 1.0
 var is_dragging: bool = false
@@ -35,10 +32,12 @@ func _ready() -> void:
 	visible = false
 	_init_tree_catalog()
 	_build_ui_layout()
+	
+	# Actualización en tiempo real desde el bus de eventos
+	EventBus.currencies_updated.connect(func(_w, _k): _update_hud_counters())
 
 func open_modal() -> void:
 	visible = true
-	# Centrar la vista en el núcleo inicial (0, 0)
 	tree_zoom = 0.95
 	tree_offset = Vector2(460, 360)
 	selected_node_id = "core_root"
@@ -47,187 +46,67 @@ func open_modal() -> void:
 	_inspect_node("core_root")
 	circuit_drawer.queue_redraw()
 	
-	await GameManager.load_player_rpg_state()
+	# Cargar datos frescos de perfil (Watts y Puntos) y talentos desde Supabase
+	var uid = SupabaseClient.current_user_id
+	if uid != "":
+		var res_prof = await SupabaseClient.send_request("/rest/v1/profiles?id=eq." + uid + "&select=watt,talent_points", HTTPClient.METHOD_GET, {}, true)
+		if res_prof.get("success", false) and typeof(res_prof.get("data")) == TYPE_ARRAY and res_prof["data"].size() > 0:
+			GameManager.watt = float(res_prof["data"][0].get("watt", GameManager.watt))
+			GameManager.talent_points = int(res_prof["data"][0].get("talent_points", GameManager.talent_points))
+
+		var res_t = await SupabaseClient.send_request("/rest/v1/player_talents?user_id=eq." + uid + "&select=*", HTTPClient.METHOD_GET, {}, true)
+		if res_t.get("success", false) and typeof(res_t.get("data")) == TYPE_ARRAY:
+			GameManager.player_talents = res_t["data"]
+		
 	if visible:
 		_update_hud_counters()
 		_inspect_node(selected_node_id)
 		circuit_drawer.queue_redraw()
 
-# ====================================================================
-# CATÁLOGO DE LOS 28 NODOS ESTELARES (ESTILO RISE OF KINGDOMS)
-# ====================================================================
 func _init_tree_catalog() -> void:
 	nodes_data = {
-		# --- NÚCLEO CENTRAL ---
-		"core_root": {
-			"name": "Núcleo de Operador", "icon": "⚡", "branch": "core", "pos": Vector2(0, 0), "prereq": "",
-			"cost_pts": 2, "cost_watt": 0.50, "max_lvl": 1,
-			"desc": "Conecta la central con el sistema neuronal. Desbloquea las tres grandes especializaciones energéticas."
-		},
+		"core_root": {"name": "Núcleo de Operador", "icon": "⚡", "branch": "core", "pos": Vector2(0, 0), "prereq": "", "cost_pts": 2, "cost_watt": 0.50, "max_lvl": 1, "desc": "Conecta la central con el sistema neuronal. Desbloquea las especializaciones energéticas."},
+		"gate_chatarrero": {"name": "Protocolo Chatarrero", "icon": "🧲", "branch": "chatarrero", "pos": Vector2(0, -110), "prereq": "core_root", "cost_pts": 3, "cost_watt": 1.00, "max_lvl": 1, "desc": "Habilita la recolección de materiales en minijuegos."},
+		"chat_iman": {"name": "Imán de Chatarra", "icon": "🧲", "branch": "chatarrero", "pos": Vector2(-100, -200), "prereq": "gate_chatarrero", "cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3, "desc": "+15% de materiales brutos en minijuegos por nivel."},
+		"chat_suerte": {"name": "Detector de Frecuencias", "icon": "🔍", "branch": "chatarrero", "pos": Vector2(100, -200), "prereq": "gate_chatarrero", "cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3, "desc": "+10% de probabilidad de materiales de Tiers altos al ganar."},
+		"chat_reflejos": {"name": "Reflejos Cinéticos", "icon": "⏱️", "branch": "chatarrero", "pos": Vector2(-160, -300), "prereq": "chat_iman", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "-12% de tiempo de espera entre partidas por nivel."},
+		"chat_reciclaje": {"name": "Extracción Rápida", "icon": "📦", "branch": "chatarrero", "pos": Vector2(0, -290), "prereq": "gate_chatarrero", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "+20% XP de Chatarrero por victoria."},
+		"chat_doble": {"name": "Doble Hallazgo", "icon": "🎲", "branch": "chatarrero", "pos": Vector2(160, -300), "prereq": "chat_suerte", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "+8% de probabilidad de duplicar botín al ganar."},
+		"chat_aleaciones": {"name": "Aleaciones Puras", "icon": "💎", "branch": "chatarrero", "pos": Vector2(-80, -400), "prereq": "chat_reflejos", "cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3, "desc": "15% de probabilidad de lote extra al recibir Tier 3+."},
+		"chat_maestria": {"name": "Maestro Chatarrero", "icon": "🪙", "branch": "chatarrero", "pos": Vector2(80, -400), "prereq": "chat_doble", "cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3, "desc": "Probabilidad del 2% en dificultad 4 de ganar 1 Ficha de Casino."},
+		"chat_apex": {"name": "Sobrecarga de Recolección", "icon": "👑", "branch": "chatarrero", "pos": Vector2(0, -490), "prereq": "chat_reciclaje", "cost_pts": 12, "cost_watt": 6.00, "max_lvl": 1, "desc": "TALENTO MAESTRO: Victorias otorgan el triple de materiales."},
 
-		# ============================================================
-		# RAMA CHATARRERO (NORTE / ARRIBA) - COLOR NARANJA FUEGO
-		# ============================================================
-		"gate_chatarrero": {
-			"name": "Protocolo Chatarrero", "icon": "🧲", "branch": "chatarrero", "pos": Vector2(0, -110), "prereq": "core_root",
-			"cost_pts": 3, "cost_watt": 1.00, "max_lvl": 1,
-			"desc": "Inicia la senda del reciclaje y minijuegos. Habilita los talentos de recolección de materiales."
-		},
-		"chat_iman": {
-			"name": "Imán de Chatarra", "icon": "🧲", "branch": "chatarrero", "pos": Vector2(-100, -200), "prereq": "gate_chatarrero",
-			"cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3,
-			"desc": "Aumenta la cantidad de materiales brutos obtenidos en minijuegos (+15% por nivel)."
-		},
-		"chat_suerte": {
-			"name": "Detector de Frecuencias", "icon": "🔍", "branch": "chatarrero", "pos": Vector2(100, -200), "prereq": "gate_chatarrero",
-			"cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3,
-			"desc": "Mayor probabilidad de conseguir materiales de Tiers superiores al ganar minijuegos (+10% por nivel)."
-		},
-		"chat_reflejos": {
-			"name": "Reflejos Cinéticos", "icon": "⏱️", "branch": "chatarrero", "pos": Vector2(-160, -300), "prereq": "chat_iman",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "Reduce el tiempo de enfriamiento (cooldown) entre partidas de minijuegos (-12% por nivel)."
-		},
-		"chat_reciclaje": {
-			"name": "Extracción Rápida", "icon": "📦", "branch": "chatarrero", "pos": Vector2(0, -290), "prereq": "gate_chatarrero",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "+20% XP de Chatarrero por cada minijuego ganado con éxito."
-		},
-		"chat_doble": {
-			"name": "Doble Hallazgo", "icon": "🎲", "branch": "chatarrero", "pos": Vector2(160, -300), "prereq": "chat_suerte",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "+8% de probabilidad por nivel de duplicar el botín completo al ganar un minijuego."
-		},
-		"chat_aleaciones": {
-			"name": "Aleaciones Puras", "icon": "💎", "branch": "chatarrero", "pos": Vector2(-80, -400), "prereq": "chat_reflejos",
-			"cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3,
-			"desc": "Al recolectar materiales Tier 3 o superior, probabilidad del 15% de recibir un lote adicional gratis."
-		},
-		"chat_maestria": {
-			"name": "Maestro Chatarrero", "icon": "🪙", "branch": "chatarrero", "pos": Vector2(80, -400), "prereq": "chat_doble",
-			"cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3,
-			"desc": "Añade una probabilidad del 2% al ganar en dificultad 4 de conseguir una Ficha de Casino adicional."
-		},
-		"chat_apex": {
-			"name": "Sobrecarga de Recolección", "icon": "👑", "branch": "chatarrero", "pos": Vector2(0, -490), "prereq": "chat_reciclaje",
-			"cost_pts": 12, "cost_watt": 6.00, "max_lvl": 1,
-			"desc": "TALENTO MAESTRO: Todas las victorias en minijuegos otorgan el triple de materiales garantizados."
-		},
+		"gate_ingeniero": {"name": "Protocolo Ingeniero", "icon": "⚙️", "branch": "ingeniero", "pos": Vector2(110, 80), "prereq": "core_root", "cost_pts": 3, "cost_watt": 1.00, "max_lvl": 1, "desc": "Habilita la fabricación y maestría en el taller."},
+		"ing_ahorro": {"name": "Corte de Precisión", "icon": "✂️", "branch": "ingeniero", "pos": Vector2(210, 20), "prereq": "gate_ingeniero", "cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3, "desc": "10% por nivel de recuperar la mitad de materiales al fabricar."},
+		"ing_resistencia": {"name": "Lubricación Sintética", "icon": "🛡️", "branch": "ingeniero", "pos": Vector2(210, 160), "prereq": "gate_ingeniero", "cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3, "desc": "La durabilidad de plantas en sala se desgasta 10% más lento."},
+		"ing_doble_craft": {"name": "Producción en Masa", "icon": "🔨", "branch": "ingeniero", "pos": Vector2(320, 20), "prereq": "ing_ahorro", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "+6% por nivel de fabricar pieza duplicada gratis."},
+		"ing_reparacion": {"name": "Mecánica Cuántica", "icon": "🔧", "branch": "ingeniero", "pos": Vector2(300, 90), "prereq": "gate_ingeniero", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "Reparar consume 1 Cable y 1 Ventilador menos por nivel."},
+		"ing_sobrecarga_gen": {"name": "Disipación Criogénica", "icon": "❄️", "branch": "ingeniero", "pos": Vector2(320, 180), "prereq": "ing_resistencia", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "+2 horas de vida útil en generadores activos."},
+		"ing_calibracion": {"name": "Afinación de Bobinas", "icon": "🔋", "branch": "ingeniero", "pos": Vector2(420, 30), "prereq": "ing_doble_craft", "cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3, "desc": "Generadores Nivel 2+ reciben +8% potencia KWP permanente."},
+		"ing_maestria": {"name": "Ingeniería de Plasma", "icon": "⚛️", "branch": "ingeniero", "pos": Vector2(420, 150), "prereq": "ing_sobrecarga_gen", "cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3, "desc": "Probabilidad de reparar al 110% de durabilidad."},
+		"ing_apex": {"name": "Reactor Perpetuo", "icon": "👑", "branch": "ingeniero", "pos": Vector2(500, 90), "prereq": "ing_reparacion", "cost_pts": 12, "cost_watt": 6.00, "max_lvl": 1, "desc": "TALENTO MAESTRO: Reparaciones Tier 4 y 5 consumen 40% menos piezas."},
 
-		# ============================================================
-		# RAMA INGENIERO (SURESTE / ABAJO DERECHA) - COLOR AZUL CIAN
-		# ============================================================
-		"gate_ingeniero": {
-			"name": "Protocolo Ingeniero", "icon": "⚙️", "branch": "ingeniero", "pos": Vector2(110, 80), "prereq": "core_root",
-			"cost_pts": 3, "cost_watt": 1.00, "max_lvl": 1,
-			"desc": "Inicia la maestría del banco de trabajo y la electrónica. Habilita los talentos de crafteo."
-		},
-		"ing_ahorro": {
-			"name": "Corte de Precisión", "icon": "✂️", "branch": "ingeniero", "pos": Vector2(210, 20), "prereq": "gate_ingeniero",
-			"cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3,
-			"desc": "10% de probabilidad por nivel de recuperar la mitad de los materiales utilizados al fabricar una pieza."
-		},
-		"ing_resistencia": {
-			"name": "Lubricación Sintética", "icon": "🛡️", "branch": "ingeniero", "pos": Vector2(210, 160), "prereq": "gate_ingeniero",
-			"cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3,
-			"desc": "La durabilidad de todas las plantas instaladas en tu sala se desgasta un 10% más lento por nivel."
-		},
-		"ing_doble_craft": {
-			"name": "Producción en Masa", "icon": "🔨", "branch": "ingeniero", "pos": Vector2(320, 20), "prereq": "ing_ahorro",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "+6% de probabilidad por nivel de fabricar una pieza duplicada gratis sin coste extra."
-		},
-		"ing_reparacion": {
-			"name": "Mecánica Cuántica", "icon": "🔧", "branch": "ingeniero", "pos": Vector2(300, 90), "prereq": "gate_ingeniero",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "Reparar generadores consume 1 Cable y 1 Ventilador menos por cada nivel de este talento."
-		},
-		"ing_sobrecarga_gen": {
-			"name": "Disipación Criogénica", "icon": "❄️", "branch": "ingeniero", "pos": Vector2(320, 180), "prereq": "ing_resistencia",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "Aumenta la vida útil de los generadores activos en 2 horas adicionales antes de apagarse."
-		},
-		"ing_calibracion": {
-			"name": "Afinación de Bobinas", "icon": "🔋", "branch": "ingeniero", "pos": Vector2(420, 30), "prereq": "ing_doble_craft",
-			"cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3,
-			"desc": "Los generadores de nivel 2 o superior reciben un +8% extra de potencia KWP permanente."
-		},
-		"ing_maestria": {
-			"name": "Ingeniería de Plasma", "icon": "⚛️", "branch": "ingeniero", "pos": Vector2(420, 150), "prereq": "ing_sobrecarga_gen",
-			"cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3,
-			"desc": "Probabilidad de que al reparar una planta quede al 110% de durabilidad (Sobrecarga Óptima)."
-		},
-		"ing_apex": {
-			"name": "Reactor Perpetuo", "icon": "👑", "branch": "ingeniero", "pos": Vector2(500, 90), "prereq": "ing_reparacion",
-			"cost_pts": 12, "cost_watt": 6.00, "max_lvl": 1,
-			"desc": "TALENTO MAESTRO: Las reparaciones de plantas Tier 4 y 5 consumen un 40% menos de piezas de alta tecnología."
-		},
-
-		# ============================================================
-		# RAMA CORREDOR (SUROESTE / ABAJO IZQUIERDA) - COLOR AMARILLO ORO
-		# ============================================================
-		"gate_corredor": {
-			"name": "Protocolo Corredor", "icon": "💡", "branch": "corredor", "pos": Vector2(-110, 80), "prereq": "core_root",
-			"cost_pts": 3, "cost_watt": 1.00, "max_lvl": 1,
-			"desc": "Inicia la especialización en finanzas de la red y flujo de energía. Habilita contratos y comisiones reducidas."
-		},
-		"cor_flujo": {
-			"name": "Transformador Pulido", "icon": "⚡", "branch": "corredor", "pos": Vector2(-210, 20), "prereq": "gate_corredor",
-			"cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3,
-			"desc": "Incrementa la tasa de minado pasivo continuo de WATT en un +10% por nivel."
-		},
-		"cor_comision": {
-			"name": "Bolsa de Valores P2P", "icon": "💼", "branch": "corredor", "pos": Vector2(-210, 160), "prereq": "gate_corredor",
-			"cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3,
-			"desc": "Reduce la tarifa de comisión por vender en el Mercado P2P del 10% base al 8% / 6% / 4%."
-		},
-		"cor_contratos": {
-			"name": "Negociador de la Red", "icon": "📜", "branch": "corredor", "pos": Vector2(-320, 20), "prereq": "cor_flujo",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "Entregar Contratos Diarios otorga un +20% adicional de XP de profesiones por nivel."
-		},
-		"cor_reserva": {
-			"name": "Subsidio Eléctrico", "icon": "🏷️", "branch": "corredor", "pos": Vector2(-300, 90), "prereq": "gate_corredor",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "Los Contratos Diarios exigen un 20% menos de Watts para ser completados."
-		},
-		"cor_ranuras": {
-			"name": "Licencia Mercantil", "icon": "🏪", "branch": "corredor", "pos": Vector2(-320, 180), "prereq": "cor_comision",
-			"cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3,
-			"desc": "Desbloquea 1 espacio adicional simultáneo para publicar ventas en el Mercado P2P."
-		},
-		"cor_inversor": {
-			"name": "Especulación de Red", "icon": "📈", "branch": "corredor", "pos": Vector2(-420, 30), "prereq": "cor_contratos",
-			"cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3,
-			"desc": "Reduce el tiempo de bloqueo de calibración de Watts/kW de 6 horas a 4 horas."
-		},
-		"cor_maestria": {
-			"name": "Magnate de la Central", "icon": "🏦", "branch": "corredor", "pos": Vector2(-420, 150), "prereq": "cor_ranuras",
-			"cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3,
-			"desc": "Al completar los 3 contratos diarios, recibes un bono directo de 1 Ficha de Casino adicional."
-		},
-		"cor_apex": {
-			"name": "Monopolio Eléctrico", "icon": "👑", "branch": "corredor", "pos": Vector2(-500, 90), "prereq": "cor_reserva",
-			"cost_pts": 12, "cost_watt": 6.00, "max_lvl": 1,
-			"desc": "TALENTO MAESTRO: Las ventas que realices en el Mercado P2P quedan completamente libres de comisión (0% tarifa)."
-		}
+		"gate_corredor": {"name": "Protocolo Corredor", "icon": "💡", "branch": "corredor", "pos": Vector2(-110, 80), "prereq": "core_root", "cost_pts": 3, "cost_watt": 1.00, "max_lvl": 1, "desc": "Especialización en finanzas de la red y flujo de energía."},
+		"cor_flujo": {"name": "Transformador Pulido", "icon": "⚡", "branch": "corredor", "pos": Vector2(-210, 20), "prereq": "gate_corredor", "cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3, "desc": "+10% a la tasa de minado pasivo continuo de WATT."},
+		"cor_comision": {"name": "Bolsa de Valores P2P", "icon": "💼", "branch": "corredor", "pos": Vector2(-210, 160), "prereq": "gate_corredor", "cost_pts": 4, "cost_watt": 1.50, "max_lvl": 3, "desc": "Reduce la comisión del Mercado P2P del 10% a 8%/6%/4%."},
+		"cor_contratos": {"name": "Negociador de la Red", "icon": "📜", "branch": "corredor", "pos": Vector2(-320, 20), "prereq": "cor_flujo", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "Entregar contratos otorga +20% adicional de XP."},
+		"cor_reserva": {"name": "Subsidio Eléctrico", "icon": "🏷️", "branch": "corredor", "pos": Vector2(-300, 90), "prereq": "gate_corredor", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "Contratos diarios exigen un 20% menos de Watts."},
+		"cor_ranuras": {"name": "Licencia Mercantil", "icon": "🏪", "branch": "corredor", "pos": Vector2(-320, 180), "prereq": "cor_comision", "cost_pts": 6, "cost_watt": 2.50, "max_lvl": 3, "desc": "+1 espacio simultáneo para vender en el Mercado P2P."},
+		"cor_inversor": {"name": "Especulación de Red", "icon": "📈", "branch": "corredor", "pos": Vector2(-420, 30), "prereq": "cor_contratos", "cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3, "desc": "Reduce bloqueo de calibración Watts/kW a 4 horas."},
+		"cor_maestria": {"name": "Magnate de la Central", "icon": "🏦", "branch": "corredor", "pos": Vector2(-420, 150), "prereq": "cor_ranuras", "cost_pts": 8, "cost_watt": 4.00, "max_lvl": 3, "desc": "Al completar los contratos diarios ganas 1 Ficha de Casino."},
+		"cor_apex": {"name": "Monopolio Eléctrico", "icon": "👑", "branch": "corredor", "pos": Vector2(-500, 90), "prereq": "cor_reserva", "cost_pts": 12, "cost_watt": 6.00, "max_lvl": 1, "desc": "TALENTO MAESTRO: Ventas en el Mercado P2P libres de comisión (0%)."}
 	}
 
-# ====================================================================
-# CONSTRUCCIÓN DE LA INTERFAZ
-# ====================================================================
 func _build_ui_layout() -> void:
 	for child in get_children(): child.queue_free()
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
-	# 1. Fondo
 	var bg := ColorRect.new()
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	bg.color = Color(0.03, 0.04, 0.06, 1.0)
 	bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(bg)
 
-	# 2. Lienzo Interactivo con Pan & Zoom
 	canvas_view = Control.new()
 	canvas_view.name = "CanvasView"
 	canvas_view.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -241,7 +120,6 @@ func _build_ui_layout() -> void:
 	circuit_drawer.draw.connect(_draw_tree_canvas)
 	canvas_view.add_child(circuit_drawer)
 
-	# 3. TopBar HUD
 	var top_panel := PanelContainer.new()
 	top_panel.set_anchors_preset(Control.PRESET_TOP_WIDE)
 	top_panel.offset_bottom = 54.0
@@ -300,7 +178,6 @@ func _build_ui_layout() -> void:
 	thbox.add_child(close_btn)
 	add_child(top_panel)
 
-	# 4. Inspector Lateral Fijo (A la derecha)
 	_build_inspector_card()
 
 func _build_inspector_card() -> void:
@@ -319,7 +196,6 @@ func _build_inspector_card() -> void:
 	p_st.border_width_left = 2; p_st.border_width_top = 2; p_st.border_width_bottom = 2; p_st.border_width_right = 2
 	p_st.border_color = Color(0.35, 0.88, 1.0, 0.9)
 	p_st.set_corner_radius_all(10)
-	p_st.shadow_color = Color(0.1, 0.5, 0.8, 0.3); p_st.shadow_size = 12
 	inspector_panel.add_theme_stylebox_override("panel", p_st)
 
 	var im := MarginContainer.new()
@@ -353,7 +229,7 @@ func _build_inspector_card() -> void:
 	ivbox.add_child(hsep)
 
 	insp_desc = Label.new()
-	insp_desc.text = "Descripción..."
+	insp_desc.text = ""
 	insp_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	insp_desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	insp_desc.add_theme_font_size_override("font_size", 12)
@@ -386,13 +262,9 @@ func _build_inspector_card() -> void:
 
 	add_child(inspector_panel)
 
-# ====================================================================
-# PAN, ZOOM Y CLIC EN EL ÁRBOL
-# ====================================================================
 func _input(event: InputEvent) -> void:
 	if not visible: return
 
-	# Evitar arrastrar si el clic está sobre el panel lateral o la barra superior
 	var mouse_p = get_viewport().get_mouse_position()
 	if mouse_p.y <= 56.0 or mouse_p.x >= (get_viewport_rect().size.x - 360.0):
 		if event is InputEventMouseButton and not event.pressed:
@@ -432,11 +304,13 @@ func _check_node_click(screen_pos: Vector2) -> void:
 			_inspect_node(nid)
 			return
 
-# ====================================================================
-# DIBUJO ESTELAR COMPLETO (TODOS LOS 28 NODOS VISIBLES)
-# ====================================================================
+func _get_talent_level_safe(nid: String) -> int:
+	for t in GameManager.player_talents:
+		if str(t.get("talent_id", "")) == nid:
+			return int(t.get("level", 1))
+	return 0
+
 func _draw_tree_canvas() -> void:
-	# 1. Rótulos grandes de las 3 ramas flotando en el fondo
 	var font = ThemeDB.fallback_font
 	var north_lbl_pos = tree_offset + (Vector2(0, -560) * tree_zoom)
 	circuit_drawer.draw_string(font, north_lbl_pos + Vector2(-110 * tree_zoom, 0), "🧲 RAMA CHATARRERO", HORIZONTAL_ALIGNMENT_CENTER, -1, int(14 * tree_zoom), Color(1.0, 0.45, 0.15, 0.7))
@@ -447,7 +321,6 @@ func _draw_tree_canvas() -> void:
 	var west_lbl_pos = tree_offset + (Vector2(-550, 230) * tree_zoom)
 	circuit_drawer.draw_string(font, west_lbl_pos, "💡 RAMA CORREDOR", HORIZONTAL_ALIGNMENT_CENTER, -1, int(14 * tree_zoom), Color(1.0, 0.85, 0.2, 0.7))
 
-	# 2. Dibujar líneas de conexión entre nodos
 	for nid in nodes_data.keys():
 		var n = nodes_data[nid]
 		var prereq_id = str(n["prereq"])
@@ -456,8 +329,10 @@ func _draw_tree_canvas() -> void:
 			var start_pt = tree_offset + (parent["pos"] * tree_zoom)
 			var end_pt = tree_offset + (n["pos"] * tree_zoom)
 
-			var child_unlocked = (GameManager.get_talent_level(nid) > 0)
-			var parent_unlocked = (GameManager.get_talent_level(prereq_id) > 0)
+			var child_lvl = _get_talent_level_safe(nid)
+			var parent_lvl = _get_talent_level_safe(prereq_id)
+			var child_unlocked = (child_lvl > 0)
+			var parent_unlocked = (parent_lvl > 0)
 
 			var line_col: Color
 			var line_width: float = 2.0 * tree_zoom
@@ -469,19 +344,19 @@ func _draw_tree_canvas() -> void:
 				line_col = _get_branch_color(n["branch"]).lerp(Color(0.2, 0.3, 0.4), 0.5)
 				line_width = 2.0 * tree_zoom
 			else:
-				line_col = Color(0.18, 0.22, 0.30, 0.4) # Visible tenue para ver el camino
+				line_col = Color(0.18, 0.22, 0.30, 0.4)
 				line_width = 1.5 * tree_zoom
 
 			circuit_drawer.draw_line(start_pt, end_pt, line_col, line_width, true)
 
-	# 3. Dibujar los 28 nodos estelares
 	for nid in nodes_data.keys():
 		var n = nodes_data[nid]
 		var center_pt = tree_offset + (n["pos"] * tree_zoom)
-		var lvl = GameManager.get_talent_level(nid)
+		var lvl = _get_talent_level_safe(nid)
 		var is_unlocked = (lvl > 0)
 		var prereq_id = str(n["prereq"])
-		var can_unlock = (prereq_id == "" or GameManager.get_talent_level(prereq_id) > 0)
+		var parent_lvl = _get_talent_level_safe(prereq_id) if prereq_id != "" else 1
+		var can_unlock = (prereq_id == "" or parent_lvl > 0)
 		var is_selected = (selected_node_id == nid)
 		var branch_col = _get_branch_color(n["branch"])
 
@@ -489,36 +364,19 @@ func _draw_tree_canvas() -> void:
 		if nid == "core_root": radius = 28.0 * tree_zoom
 		elif nid.begins_with("gate_"): radius = 25.0 * tree_zoom
 
-		# Resplandor de selección
 		if is_selected:
 			circuit_drawer.draw_circle(center_pt, radius + (6.0 * tree_zoom), Color(1, 1, 1, 0.25))
 			circuit_drawer.draw_arc(center_pt, radius + (5.0 * tree_zoom), 0, TAU, 32, Color.WHITE, 2.0 * tree_zoom, true)
 
-		# Color de fondo del nodo
-		var fill_col: Color
-		if is_unlocked:
-			fill_col = branch_col.lerp(Color(0.04, 0.06, 0.10), 0.45)
-		elif can_unlock:
-			fill_col = Color(0.10, 0.14, 0.22, 0.95) # Disponible
-		else:
-			fill_col = Color(0.06, 0.08, 0.12, 0.85) # Bloqueado tenue
-
-		var border_col: Color
-		if is_unlocked:
-			border_col = branch_col
-		elif can_unlock:
-			border_col = branch_col.lerp(Color.WHITE, 0.3) # Brillo listo para comprar
-		else:
-			border_col = Color(0.25, 0.30, 0.40, 0.5)
+		var fill_col: Color = branch_col.lerp(Color(0.04, 0.06, 0.10), 0.45) if is_unlocked else (Color(0.10, 0.14, 0.22, 0.95) if can_unlock else Color(0.06, 0.08, 0.12, 0.85))
+		var border_col: Color = branch_col if is_unlocked else (branch_col.lerp(Color.WHITE, 0.3) if can_unlock else Color(0.25, 0.30, 0.40, 0.5))
 
 		circuit_drawer.draw_circle(center_pt, radius, fill_col)
 		circuit_drawer.draw_arc(center_pt, radius, 0, TAU, 32, border_col, (2.5 if can_unlock else 1.5) * tree_zoom, true)
 
-		# Icono del nodo en el centro
 		var icon_str = str(n.get("icon", "★"))
 		circuit_drawer.draw_string(font, center_pt + Vector2(-8 * tree_zoom, 5 * tree_zoom), icon_str, HORIZONTAL_ALIGNMENT_CENTER, -1, int(14 * tree_zoom), Color.WHITE if (is_unlocked or can_unlock) else Color(0.5, 0.55, 0.65))
 
-		# Indicador de nivel debajo del nodo (ej: 0/3)
 		var max_lvl = int(n["max_lvl"])
 		var lvl_str = "%d/%d" % [lvl, max_lvl]
 		if nid == "core_root" or max_lvl == 1:
@@ -534,20 +392,18 @@ func _get_branch_color(b: String) -> Color:
 		"corredor": return Color(1.0, 0.85, 0.2)
 		_: return Color.WHITE
 
-# ====================================================================
-# INSPECTOR LATERAL Y COMPRA
-# ====================================================================
 func _inspect_node(node_id: String) -> void:
 	if not nodes_data.has(node_id): return
 	selected_node_id = node_id
 
 	var n = nodes_data[node_id]
-	var cur_lvl = GameManager.get_talent_level(node_id)
+	var cur_lvl = _get_talent_level_safe(node_id)
 	var max_lvl = int(n["max_lvl"])
 	var is_max = (cur_lvl >= max_lvl)
 	var prereq_id = str(n["prereq"])
 
-	var prereq_ok = (prereq_id == "" or GameManager.get_talent_level(prereq_id) > 0)
+	var prereq_lvl = _get_talent_level_safe(prereq_id) if prereq_id != "" else 1
+	var prereq_ok = (prereq_id == "" or prereq_lvl > 0)
 	var cost_pts = int(n["cost_pts"]) * (cur_lvl + 1)
 	var cost_w = float(n["cost_watt"]) * (cur_lvl + 1)
 
@@ -583,7 +439,7 @@ func _inspect_node(node_id: String) -> void:
 func _on_upgrade_clicked() -> void:
 	if not nodes_data.has(selected_node_id): return
 	var n = nodes_data[selected_node_id]
-	var cur_lvl = GameManager.get_talent_level(selected_node_id)
+	var cur_lvl = _get_talent_level_safe(selected_node_id)
 	var cost_pts = int(n["cost_pts"]) * (cur_lvl + 1)
 	var cost_w = float(n["cost_watt"]) * (cur_lvl + 1)
 	var prereq_id = str(n["prereq"])
@@ -591,13 +447,37 @@ func _on_upgrade_clicked() -> void:
 	insp_buy_btn.disabled = true
 	status_lbl.text = "Enviando solicitud a la central..."
 	status_lbl.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
-	
-	print("[Talentos] Intentando mejorar: ", selected_node_id, " | Coste: ", cost_pts, " pts, ", cost_w, " W")
 
-	var res = await GameManager.upgrade_talent_secure(selected_node_id, str(n["branch"]), cost_pts, cost_w, prereq_id)
-	print("[Talentos] Respuesta del servidor: ", res)
+	var body = {
+		"p_talent_id": selected_node_id,
+		"p_branch": str(n["branch"]),
+		"p_cost_points": cost_pts,
+		"p_cost_watt": cost_w,
+		"p_prereq_id": prereq_id
+	}
+	var res = await SupabaseClient.send_request("/rest/v1/rpc/upgrade_player_talent", HTTPClient.METHOD_POST, body, true)
 
-	if res.get("success", false):
+	if res.get("success", false) and res.get("data", {}).get("success", false):
+		var d = res["data"]
+		var new_lvl = int(d.get("new_level", cur_lvl + 1))
+		
+		GameManager.talent_points = maxi(0, GameManager.talent_points - cost_pts)
+		GameManager.watt = maxf(0.0, GameManager.watt - cost_w)
+		EventBus.currencies_updated.emit(GameManager.watt, GameManager.kilowat)
+		
+		var found = false
+		for t in GameManager.player_talents:
+			if str(t.get("talent_id", "")) == selected_node_id:
+				t["level"] = new_lvl
+				found = true
+				break
+		if not found:
+			GameManager.player_talents.append({
+				"talent_id": selected_node_id,
+				"talent_branch": str(n["branch"]),
+				"level": new_lvl
+			})
+			
 		status_lbl.text = "✓ ¡Talento desbloqueado con éxito!"
 		status_lbl.add_theme_color_override("font_color", Color(0.4, 1.0, 0.6))
 		_update_hud_counters()
@@ -605,8 +485,12 @@ func _on_upgrade_clicked() -> void:
 		circuit_drawer.queue_redraw()
 		talents_updated.emit()
 	else:
-		# Mostrar el error exacto recibido sin borrarlo
-		var err_msg = str(res.get("error", "Error desconocido"))
+		var err_msg = "Error desconocido"
+		if typeof(res.get("data")) == TYPE_DICTIONARY and res["data"].has("error"):
+			err_msg = str(res["data"]["error"])
+		elif res.has("error") and res["error"] != "":
+			err_msg = str(res["error"])
+			
 		status_lbl.text = "⚠️ " + err_msg
 		status_lbl.add_theme_color_override("font_color", Color(1.0, 0.4, 0.4))
 		insp_buy_btn.disabled = false

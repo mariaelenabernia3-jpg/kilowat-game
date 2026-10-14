@@ -1,14 +1,12 @@
 # res://features/room/main_room.gd
 extends Node2D
 
-# Componentes Principales de Escena
 var room_hud: Node = null
 var room_grid: Node = null
 var room_background: TextureRect = null
 var room_alert_toast: PanelContainer = null
 var alert_tween: Tween = null
 
-# Modales de la Escena
 var power_split_modal: Control = null
 var extraction_modal: Control = null
 var rack_manage_dialog: Node = null
@@ -17,17 +15,14 @@ var battle_pass_screen: Control = null
 var bg_selector_modal: Node = null
 var taller_modal: Control = null
 
-# Modal de Selección de Estanterías en el Suelo
 var rack_select_modal: Control = null
 var rack_select_list: VBoxContainer = null
 var rack_select_title: Label = null
 var current_target_slot: int = -1
 
-# Botón de Evento Semanal
 var event_btn: BaseButton = null
 var event_btn_container: Control = null
 
-# Menú Lateral Izquierdo Desplegable (Navegación)
 var drawer_root: Control = null
 var drawer_is_open: bool = false
 var drawer_width: float = 210.0
@@ -36,7 +31,6 @@ var drawer_tab_btn: Button = null
 var drawer_bg_btn: Button = null
 var talent_modal: Control = null
 
-# Menú Lateral Derecho Desplegable (Almacén)
 var inv_root: Control = null
 var inv_is_open: bool = false
 var inv_width: float = 290.0
@@ -47,7 +41,6 @@ var inv_tab_gens_btn: Button = null
 var inv_tab_racks_btn: Button = null
 var current_inv_tab: String = "generators"
 
-# Modal Dinámico de Mercado P2P
 var market_modal: Control = null
 var market_grid: GridContainer = null
 var market_status_lbl: Label = null
@@ -57,7 +50,6 @@ var market_tab_my_btn: Button = null
 var current_market_view: String = "browse"
 var cached_market_listings: Array = []
 
-# Módulo de Chat
 var docked_chat_box: PanelContainer = null
 var chat_mode_btn: Button = null
 var chat_friends_btn: Button = null
@@ -77,7 +69,6 @@ var chat_cooldown_left: float = 0.0
 var is_fetching_chat: bool = false
 var last_chat_hash: String = ""
 
-# Modal de Amigos
 var friends_modal: Control = null
 var friends_list_vbox: VBoxContainer = null
 var friend_req_input: LineEdit = null
@@ -89,7 +80,6 @@ const GENERATOR_VIEW_SCENE: PackedScene = preload("res://features/room/generator
 const RACK_1_FLOOR_DATA: RackData = preload("res://data/racks/rack_1_floor.tres")
 const RACK_2_FLOORS_DATA: RackData = preload("res://data/racks/rack_2_floors.tres")
 const RACK_3_FLOORS_DATA: RackData = preload("res://data/racks/rack_3_floors.tres")
-const PLANTA_MEME_DATA: GeneratorData = preload("res://data/generators/generator_planta_lvl1.tres")
 
 const WATT_ICON: Texture2D = preload("res://assets/sprites/ui/icon_watt.png")
 const KILOWAT_ICON: Texture2D = preload("res://assets/sprites/ui/icon_kilowat.png")
@@ -107,7 +97,6 @@ func _ready() -> void:
 	_create_rack_select_modal()
 	_create_market_modal()
 	
-	# Instanciar el Taller Mecánico de forma segura en memoria para el .pck
 	var taller_script = load("res://features/room/taller/taller_modal.gd")
 	if taller_script:
 		taller_modal = taller_script.new()
@@ -117,7 +106,6 @@ func _ready() -> void:
 			_refresh_inventory_ui()
 		)
 	
-	# Instanciar el Árbol de Talentos
 	var talent_script = load("res://features/progression/talents/talent_tree_modal.gd")
 	if talent_script:
 		talent_modal = talent_script.new()
@@ -125,7 +113,20 @@ func _ready() -> void:
 	
 	_apply_equipped_background()
 	
+	# SALVAVIDAS: Si el perfil aún no se cargó en el móvil, recuperarlo aquí mismo
+	if GameManager.username == "":
+		if SupabaseClient.current_user_id == "":
+			if SupabaseAuth.load_saved_session():
+				await SupabaseAuth.refresh_access_token()
+		if SupabaseClient.current_user_id != "":
+			await GameManager.load_profile()
+	
+	# Cargar inventario y estado RPG (SIN la línea 117 que causaba el corte)
 	await GameManager.load_player_inventory()
+	await GameManager.load_player_parts()
+	await GameManager.load_player_rpg_state()
+	
+	# Dibujar los estantes y generadores en pantalla
 	_render_placed_racks()
 	_render_placed_generators()
 	_refresh_inventory_ui()
@@ -136,18 +137,14 @@ func _process(delta: float) -> void:
 
 func _force_load_patch_zoom_controller() -> void:
 	var root_viewport = get_tree().root
-	
-	# 1. Si ya existe uno activo y válido, no crearlo de nuevo
 	var existing = root_viewport.get_node_or_null("GlobalZoomController")
 	if existing and is_instance_valid(existing):
 		return
 
-	# 2. Limpiar residuos antes de instanciar
 	for child in root_viewport.get_children():
 		if child.name.begins_with("OldZoom") or child.name == "GlobalZoomController":
 			child.queue_free()
 
-	# 3. Cargar el script nuevo del .pck ignorando caché
 	var z_path := "res://features/room/controls/zoom_controller.gd"
 	if ResourceLoader.exists(z_path):
 		var z_script = ResourceLoader.load(z_path, "", ResourceLoader.CACHE_MODE_REPLACE)
@@ -248,10 +245,6 @@ func _close_all_drawers() -> void:
 	if market_modal and market_modal.visible: market_modal.visible = false
 	if friends_modal and friends_modal.visible: friends_modal.visible = false
 	if taller_modal and taller_modal.visible: taller_modal.visible = false
-
-# ====================================================================
-# MENÚ LATERAL IZQUIERDO DESPLEGABLE
-# ====================================================================
 
 func _create_sliding_drawer() -> void:
 	var canvas_ui = find_child("CanvasLayerUI", true, false)
@@ -425,10 +418,6 @@ func _on_drawer_option_pressed(opt_id: String) -> void:
 				if bg_selector_modal.has_method("open_modal"): bg_selector_modal.open_modal()
 				else: bg_selector_modal.visible = true
 
-# ====================================================================
-# MODAL DE SELECCIÓN DE ESTANTERÍA (CREACIÓN Y APERTURA)
-# ====================================================================
-
 func _create_rack_select_modal() -> void:
 	var canvas_ui = find_child("CanvasLayerUI", true, false)
 	if canvas_ui == null: return
@@ -509,7 +498,7 @@ func _open_rack_select_modal(slot_index: int) -> void:
 
 	if available_racks.is_empty():
 		var empty_lbl := Label.new()
-		empty_lbl.text = "No tienes estanterías en tu inventario."
+		empty_lbl.text = "No tienes estanterías en tu almacén."
 		rack_select_list.add_child(empty_lbl)
 	else:
 		for r in available_racks:
@@ -554,10 +543,6 @@ func _place_chosen_rack(rack: Dictionary, slot_index: int) -> void:
 	
 	var r_id = str(rack.get("id", rack.get("rack_id", "")))
 	await GameManager.place_rack_in_slot(r_id, slot_index)
-
-# ====================================================================
-# MODAL DEL MERCADO P2P (COMPLETO CON ARTÍCULOS Y REPUESTOS)
-# ====================================================================
 
 func _create_market_modal() -> void:
 	var canvas_ui = find_child("CanvasLayerUI", true, false)
@@ -777,47 +762,35 @@ func _fetch_and_show_browse_listings() -> void:
 			vb.add_child(buy_b)
 			market_grid.add_child(card)
 
-# ====================================================================
-# PESTAÑA: VENDER MI INVENTARIO (MATERIALES, REPUESTOS Y GENERADORES)
-# ====================================================================
 func _show_sellable_inventory() -> void:
 	for child in market_grid.get_children(): child.queue_free()
 	market_status_lbl.text = "Cargando tus artículos..."
 	
-	# Cargar inventarios actualizados desde el servidor
 	await GameManager.load_player_inventory()
+	await GameManager.load_player_materials()
+	await GameManager.load_player_parts()
 	await GameManager.load_player_rpg_state()
 	market_status_lbl.text = ""
 
-	# 1. Filtrar Materiales Brutos desde 1 unidad
 	var sellable_materials: Array = []
 	for m in GameManager.player_materials:
-		if int(m.get("quantity", 0)) >= 1:
-			sellable_materials.append(m)
+		if int(m.get("quantity", 0)) >= 1: sellable_materials.append(m)
 
-	# 2. Filtrar Generadores desmontados y montados
 	var unmounted_gens: Array = []
 	var mounted_gens: Array = []
 	for g in GameManager.player_generators:
 		var is_mounted = (g.get("rack_id") != null and str(g.get("rack_id")) != "" and str(g.get("rack_id")) != "null")
-		if not is_mounted:
-			unmounted_gens.append(g)
-		else:
-			mounted_gens.append(g)
+		if not is_mounted: unmounted_gens.append(g)
+		else: mounted_gens.append(g)
 
-	# 3. Filtrar Estanterías en almacén
 	var sellable_racks: Array = []
 	for r in GameManager.player_racks:
-		if int(r.get("slot_index", -1)) == -1:
-			sellable_racks.append(r)
+		if int(r.get("slot_index", -1)) == -1: sellable_racks.append(r)
 
-	# 4. Filtrar Repuestos y piezas manufacturadas
 	var sellable_parts: Array = []
 	for p in GameManager.player_parts:
-		if int(p.get("quantity", 0)) > 0:
-			sellable_parts.append(p)
+		if int(p.get("quantity", 0)) > 0: sellable_parts.append(p)
 
-	# Comprobación de almacén totalmente vacío
 	if sellable_materials.is_empty() and unmounted_gens.is_empty() and mounted_gens.is_empty() and sellable_racks.is_empty() and sellable_parts.is_empty():
 		var empty_lbl := Label.new()
 		empty_lbl.text = "Tu almacén está vacío. Juega minijuegos para recolectar materiales o craftea piezas para venderlas aquí."
@@ -825,35 +798,28 @@ func _show_sellable_inventory() -> void:
 		market_grid.add_child(empty_lbl)
 		return
 
-	# --- RENDERIZADO DE ARTÍCULOS EN VENTA ---
-
-	# A. Lotes de Materiales Brutos (Cobre, Silicio, Plástico, Hierro)
 	for m in sellable_materials:
 		var mtype = str(m.get("material_type", ""))
 		var mtier = int(m.get("tier", 1))
 		var mqty = int(m.get("quantity", 0))
 		market_grid.add_child(_build_sell_material_card(mtype, mtier, mqty))
 
-	# B. Repuestos de taller manufacturados
 	for p in sellable_parts:
 		var ptype = str(p.get("part_type", ""))
 		var plvl = int(p.get("part_level", 1))
 		var pqty = int(p.get("quantity", 1))
 		market_grid.add_child(_build_sell_part_card(ptype, plvl, pqty))
 
-	# C. Generadores en almacén (listos para publicar)
 	for g in unmounted_gens:
 		var gid = str(g.get("id", ""))
 		var gtype = str(g.get("generator_type", ""))
 		market_grid.add_child(_build_sell_item_card("generator", gid, "⚡ " + _format_gen_name(gtype)))
 
-	# D. Generadores instalados en estanterías (opción de desmontar)
 	for g in mounted_gens:
 		var gid = str(g.get("id", ""))
 		var gtype = str(g.get("generator_type", ""))
 		market_grid.add_child(_build_mounted_gen_card(gid, _format_gen_name(gtype)))
 
-	# E. Estanterías en almacén
 	for r in sellable_racks:
 		var rid = str(r.get("id", ""))
 		var rtype = str(r.get("rack_type", ""))
@@ -1140,9 +1106,6 @@ func _show_my_listings() -> void:
 			vb.add_child(cb)
 			market_grid.add_child(card)
 
-# ====================================================================
-# AUXILIARES
-# ====================================================================
 func _format_rack_name(r_type: String) -> String:
 	match r_type:
 		"rack_2_floors": return "Estantería de 2 Pisos"
@@ -1162,9 +1125,6 @@ func _format_gen_name(g_type: String) -> String:
 		"pro_electrico": return "EcoFlow Pro Eléctrico"
 		_: return "Planta Meme"
 
-# ====================================================================
-# GESTIÓN DE ESPACIOS Y GENERADORES EN LA SALA
-# ====================================================================
 func _on_slot_clicked(slot_index: int) -> void:
 	_close_all_drawers()
 	for rack in GameManager.player_racks:
@@ -1204,7 +1164,6 @@ func _on_rack_hold_unmounted(slot_index: int) -> void:
 	await GameManager.unmount_rack_complete(r_id)
 
 func _on_generator_unmounted(gen_id: String) -> void:
-	# 1. Desvincular en la memoria local buscando por id o gen_id
 	for g in GameManager.player_generators:
 		var current_id = str(g.get("id", g.get("gen_id", "")))
 		if current_id == gen_id:
@@ -1216,18 +1175,16 @@ func _on_generator_unmounted(gen_id: String) -> void:
 	_render_placed_generators()
 	_refresh_inventory_ui()
 
-	# 2. Desvincular en el servidor
 	var ok: bool = await GameManager.unmount_generator(gen_id)
 	if ok:
-		show_room_alert("✓ Generador desmontado y guardado en el almacén.", false)
+		show_room_alert("✓ Generador desmontado al almacén.", false)
 	else:
-		show_room_alert("⚠️ Error al sincronizar el desmonte con el servidor.", true)
+		show_room_alert("⚠️ Error al desocupar generador.", true)
 
 func _on_generator_mounted(gen_id: String, slot_idx: int) -> void:
 	if rack_manage_dialog and "current_rack" in rack_manage_dialog:
 		var r_id: String = str(rack_manage_dialog.current_rack.get("id", rack_manage_dialog.current_rack.get("rack_id", "")))
 		
-		# Llamada segura: tolera tanto Diccionario como Booleano para evitar crasheos
 		var raw_res = await GameManager.place_generator_in_rack(gen_id, r_id, slot_idx)
 		var is_success: bool = false
 		var error_text: String = "No se pudo montar el generador."
@@ -1245,7 +1202,7 @@ func _on_generator_mounted(gen_id: String, slot_idx: int) -> void:
 			_refresh_inventory_ui()
 			return
 		
-		show_room_alert("✓ Generador colocado con éxito.", false)
+		show_room_alert("✓ Generador montado con éxito.", false)
 
 		for g in GameManager.player_generators:
 			var is_same_rack = str(g.get("rack_id", "")) == r_id
@@ -1351,9 +1308,6 @@ func _get_gen_data(t: String) -> GeneratorData:
 	if ResourceLoader.exists(fallback_path): return load(fallback_path)
 	return null
 
-# ====================================================================
-# MENÚ DERECHO (INVENTARIO ALMACÉN)
-# ====================================================================
 func _create_inventory_drawer() -> void:
 	var canvas_ui = find_child("CanvasLayerUI", true, false)
 	if canvas_ui == null: return
@@ -1558,9 +1512,6 @@ func _refresh_inventory_ui() -> void:
 			row.add_child(name_lbl)
 			inv_list_container.add_child(card)
 
-# ====================================================================
-# CHAT Y AMIGOS
-# ====================================================================
 func _create_docked_chat_box() -> void:
 	var canvas_ui = find_child("CanvasLayerUI", true, false)
 	if canvas_ui == null: return
@@ -2004,7 +1955,7 @@ func _build_sell_material_card(mat_type: String, tier: int, max_stock: int) -> P
 	var cur_opt := OptionButton.new()
 	cur_opt.add_item("WATT", 0)
 	cur_opt.add_item("KILOWAT", 1)
-	cur_opt.selected = 1 # Por defecto en Kilowatts para que ganen dinero real
+	cur_opt.selected = 1
 	input_row.add_child(cur_opt)
 	vb.add_child(input_row)
 

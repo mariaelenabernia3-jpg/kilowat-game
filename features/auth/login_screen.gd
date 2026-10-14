@@ -13,8 +13,6 @@ var splash_layer: VBoxContainer = null
 var splash_status_lbl: Label = null
 var pulse_tween: Tween = null
 
-# res://features/auth/login_screen.gd
-
 const INTRO_SCENE: String = "res://features/intro/splash_intro.tscn"
 const MAIN_ROOM_SCENE: String = "res://features/room/main_room.tscn"
 
@@ -26,8 +24,6 @@ func _ready() -> void:
 	if login_button == null: login_button = find_child("LoginButton", true, false)
 	if register_button == null: register_button = find_child("RegisterButton", true, false)
 	if status_label == null: status_label = find_child("StatusLabel", true, false)
-	
-	_hot_reload_game_manager_from_patch()
 
 	login_panel.visible = false
 	login_panel.modulate.a = 0.0
@@ -47,15 +43,6 @@ func _ready() -> void:
 	
 	_init_session_flow()
 
-func _hot_reload_game_manager_from_patch() -> void:
-	var gm := get_node_or_null("/root/GameManager")
-	if gm:
-		var target_path = "res://core/state/game_manager.gd"
-		var new_script = ResourceLoader.load(target_path, "", ResourceLoader.CACHE_MODE_REPLACE)
-		if new_script:
-			gm.set_script(new_script)
-			if gm.has_method("_ready"): gm._ready()
-
 func _init_session_flow() -> void:
 	if not SupabaseAuth.load_saved_session():
 		_reveal_login_form()
@@ -69,7 +56,16 @@ func _init_session_flow() -> void:
 		return
 		
 	_update_splash_status("Sincronizando estado de los generadores...")
-	var profile_ready: bool = await GameManager.load_profile()
+	
+	# SALVAVIDAS: Si GameManager fue liberado o es nulo, lo revive de inmediato
+	var gm = get_node_or_null("/root/GameManager")
+	if gm == null or not is_instance_valid(gm):
+		var gm_script = load("res://core/state/game_manager.gd")
+		gm = gm_script.new()
+		gm.name = "GameManager"
+		get_tree().root.add_child(gm)
+		
+	var profile_ready: bool = await gm.load_profile()
 	
 	if profile_ready:
 		_update_splash_status("✓ Conexión establecida. Iniciando...")
@@ -79,7 +75,10 @@ func _init_session_flow() -> void:
 		_reveal_login_form("Error al sincronizar tu perfil. Inicia sesión nuevamente.")
 
 func _go_to_main_room() -> void:
-	# Si existe la presentación, pasa por ella; si no, entra directo a la habitación
+	# Apaga el tween para que no intente procesar nodos destruidos
+	if pulse_tween and pulse_tween.is_valid():
+		pulse_tween.kill()
+		
 	if ResourceLoader.exists(INTRO_SCENE):
 		get_tree().change_scene_to_file(INTRO_SCENE)
 	else:

@@ -8,7 +8,6 @@ const BASE_VERSION: String = "1.0.0"
 const UPDATES_DIR: String = "user://updates/"
 const VERSION_FILE: String = "user://installed_version.txt"
 
-# ¡Ruta moderna modular para entrar al juego!
 const MAIN_GAME_SCENE: String = "res://features/auth/login_screen.tscn"
 
 @onready var status_lbl: Label = $Center/Panel/Margin/VBox/StatusLabel
@@ -34,18 +33,18 @@ func _ready() -> void:
 	pulse_tween.tween_property(logo_lbl, "modulate:a", 0.6, 0.7)
 	pulse_tween.tween_property(logo_lbl, "modulate:a", 1.0, 0.7)
 	
+	if not DirAccess.dir_exists_absolute(UPDATES_DIR):
+		DirAccess.make_dir_recursive_absolute(UPDATES_DIR)
+
+	# Montar parche previo en disco si existe
+	_mount_existing_patch()
+
 	if OS.has_feature("editor"):
-		print("[OTA] Modo editor detectado. Saltando comprobación.")
+		print("[OTA] Modo editor. Saltando comprobación.")
 		_proceed_to_game()
 		return
 
-	if not DirAccess.dir_exists_absolute(UPDATES_DIR):
-		DirAccess.make_dir_recursive_absolute(UPDATES_DIR)
-		
-	# 1. Montar parche previo en disco si existe
-	_mount_existing_patch()
-
-	# 2. Comprobar nueva versión en GitHub
+	# Comprobar actualizaciones remotas
 	_check_github_updates()
 
 func _mount_existing_patch() -> bool:
@@ -65,7 +64,7 @@ func _mount_existing_patch() -> bool:
 		mounted = ProjectSettings.load_resource_pack(saved_pck, true)
 		
 	if mounted:
-		print("[OTA] Parche montado con éxito en memoria.")
+		print("[OTA] Parche .pck montado con éxito en res://")
 	return mounted
 
 func _get_current_installed_version() -> String:
@@ -155,7 +154,6 @@ func _handle_detected_update(release: Dictionary, tag: String) -> void:
 	is_pck_patch = false
 	var download_name := ""
 	
-	# Prioridad 1: Parche .pck liviano (3-5 MB)
 	for asset in assets:
 		var name_str := str(asset.get("name", "")).to_lower()
 		if name_str.ends_with(".pck"):
@@ -165,7 +163,6 @@ func _handle_detected_update(release: Dictionary, tag: String) -> void:
 			is_pck_patch = true
 			break
 			
-	# Prioridad 2: Si no hay parche, APK completa
 	if target_download_url == "":
 		for asset in assets:
 			var name_str := str(asset.get("name", "")).to_lower()
@@ -216,7 +213,6 @@ func _start_download_from_github() -> void:
 	is_downloading = false
 	dl_request.queue_free()
 	
-	# Verificar código 200 y tamaño para evitar parches corruptos
 	if res[1] == 200:
 		var final_file := FileAccess.open(downloaded_local_path, FileAccess.READ)
 		var actual_len: int = final_file.get_length() if final_file else 0
@@ -253,6 +249,5 @@ func _launch_apk_installer() -> void:
 		if err != OK: OS.shell_open(target_download_url)
 
 func _proceed_to_game() -> void:
-	if pulse_tween: 
-		pulse_tween.kill()
+	if pulse_tween: pulse_tween.kill()
 	get_tree().change_scene_to_file.call_deferred(MAIN_GAME_SCENE)
