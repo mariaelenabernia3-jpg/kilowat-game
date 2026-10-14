@@ -836,3 +836,6 @@ func upgrade_talent_secure(talent_id: String, branch: String, cost_points: int, 
 			err_msg = str(res["error"])
 			
 		return {"success": false, "error": err_msg}
+		
+func load_player_materials() -> void:
+	await load_player_rpg_state()

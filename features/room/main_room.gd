@@ -97,6 +97,11 @@ func _ready() -> void:
 	_create_rack_select_modal()
 	_create_market_modal()
 	
+	# Asegurar que RoomGrid dibuje por encima del fondo en Android
+	if room_grid:
+		room_grid.z_index = 5
+		room_grid.z_as_relative = false
+	
 	var taller_script = load("res://features/room/taller/taller_modal.gd")
 	if taller_script:
 		taller_modal = taller_script.new()
@@ -113,7 +118,7 @@ func _ready() -> void:
 	
 	_apply_equipped_background()
 	
-	# SALVAVIDAS: Si el perfil aún no se cargó en el móvil, recuperarlo aquí mismo
+	# Recuperar sesión y cargar perfil si venía vacío
 	if GameManager.username == "":
 		if SupabaseClient.current_user_id == "":
 			if SupabaseAuth.load_saved_session():
@@ -121,12 +126,10 @@ func _ready() -> void:
 		if SupabaseClient.current_user_id != "":
 			await GameManager.load_profile()
 	
-	# Cargar inventario y estado RPG (SIN la línea 117 que causaba el corte)
 	await GameManager.load_player_inventory()
 	await GameManager.load_player_parts()
 	await GameManager.load_player_rpg_state()
 	
-	# Dibujar los estantes y generadores en pantalla
 	_render_placed_racks()
 	_render_placed_generators()
 	_refresh_inventory_ui()
@@ -266,13 +269,8 @@ func _create_sliding_drawer() -> void:
 	var p_st := StyleBoxFlat.new()
 	p_st.bg_color = Color(0.06, 0.08, 0.12, 0.96)
 	p_st.border_color = Color(0.25, 0.55, 0.85, 0.9)
-	p_st.border_width_right = 2
-	p_st.border_width_top = 2
-	p_st.border_width_bottom = 2
-	p_st.corner_radius_top_right = 10
-	p_st.corner_radius_bottom_right = 10
-	p_st.shadow_color = Color(0.1, 0.45, 0.8, 0.3)
-	p_st.shadow_size = 12
+	p_st.border_width_right = 2; p_st.border_width_top = 2; p_st.border_width_bottom = 2
+	p_st.corner_radius_top_right = 10; p_st.corner_radius_bottom_right = 10
 	panel.add_theme_stylebox_override("panel", p_st)
 
 	var margin := MarginContainer.new()
@@ -294,18 +292,6 @@ func _create_sliding_drawer() -> void:
 	var sep := HSeparator.new()
 	vbox.add_child(sep)
 
-	var btn_normal := StyleBoxFlat.new()
-	btn_normal.bg_color = Color(0.10, 0.13, 0.19, 0.9)
-	btn_normal.border_color = Color(0.25, 0.38, 0.55, 0.7)
-	btn_normal.set_border_width_all(1)
-	btn_normal.set_corner_radius_all(6)
-
-	var btn_hover := StyleBoxFlat.new()
-	btn_hover.bg_color = Color(0.14, 0.20, 0.30, 1.0)
-	btn_hover.border_color = Color(0.35, 0.88, 1.0, 1.0)
-	btn_hover.set_border_width_all(1)
-	btn_hover.set_corner_radius_all(6)
-
 	var options = [
 		{"id": "taller", "text": "🔧 Taller Mecánico", "color": Color(1.0, 0.85, 0.25)},
 		{"id": "talents", "text": "🌳 Árbol de Talentos", "color": Color(0.35, 0.9, 1.0)},
@@ -323,9 +309,6 @@ func _create_sliding_drawer() -> void:
 		b.text = opt["text"]
 		b.custom_minimum_size = Vector2(0, 34)
 		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		b.add_theme_stylebox_override("normal", btn_normal)
-		b.add_theme_stylebox_override("hover", btn_hover)
-		b.add_theme_stylebox_override("pressed", btn_hover)
 		b.add_theme_color_override("font_color", opt["color"])
 		b.add_theme_font_size_override("font_size", 12)
 
@@ -347,21 +330,6 @@ func _create_sliding_drawer() -> void:
 	drawer_tab_btn.custom_minimum_size = Vector2(34, 60)
 	drawer_tab_btn.size = Vector2(34, 60)
 	drawer_tab_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-
-	var tab_st := StyleBoxFlat.new()
-	tab_st.bg_color = Color(0.08, 0.12, 0.18, 0.96)
-	tab_st.border_color = Color(0.35, 0.88, 1.0, 1.0)
-	tab_st.border_width_right = 2
-	tab_st.border_width_top = 2
-	tab_st.border_width_bottom = 2
-	tab_st.corner_radius_top_right = 8
-	tab_st.corner_radius_bottom_right = 8
-	tab_st.shadow_color = Color(0.15, 0.6, 0.9, 0.4)
-	tab_st.shadow_size = 8
-	drawer_tab_btn.add_theme_stylebox_override("normal", tab_st)
-	drawer_tab_btn.add_theme_stylebox_override("hover", tab_st)
-	drawer_tab_btn.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
-	drawer_tab_btn.add_theme_font_size_override("font_size", 15)
 	drawer_tab_btn.pressed.connect(_toggle_drawer)
 
 	drawer_root.add_child(drawer_tab_btn)
@@ -568,8 +536,6 @@ func _create_market_modal() -> void:
 	p_st.bg_color = Color(0.07, 0.09, 0.13, 0.98)
 	p_st.border_color = Color(0.3, 0.95, 0.75, 1.0)
 	p_st.set_border_width_all(2); p_st.set_corner_radius_all(12)
-	p_st.shadow_color = Color(0.1, 0.6, 0.45, 0.3)
-	p_st.shadow_size = 14
 	panel.add_theme_stylebox_override("panel", p_st)
 	center.add_child(panel)
 
@@ -767,7 +733,7 @@ func _show_sellable_inventory() -> void:
 	market_status_lbl.text = "Cargando tus artículos..."
 	
 	await GameManager.load_player_inventory()
-	await GameManager.load_player_materials()
+	# (Asegúrate de que NO esté la línea await GameManager.load_player_materials())
 	await GameManager.load_player_parts()
 	await GameManager.load_player_rpg_state()
 	market_status_lbl.text = ""
@@ -1248,6 +1214,7 @@ func _instantiate_rack(rack_info: Dictionary, slot_idx: int) -> void:
 	for child in anchor.get_children(): child.queue_free()
 	var r_instance = RACK_VIEW_SCENE.instantiate()
 	anchor.add_child(r_instance)
+	r_instance.z_index = 6
 	r_instance.setup_rack(_get_rack_data(rack_info), str(rack_info.get("id", "")), slot_idx)
 	spawned_racks[slot_idx] = r_instance
 
@@ -1289,6 +1256,7 @@ func _render_placed_generators() -> void:
 					occupied_slots[slot_key] = true
 					var gen_view = GENERATOR_VIEW_SCENE.instantiate()
 					marker.add_child(gen_view)
+					gen_view.z_index = 7
 					var res = _get_gen_data(str(gen.get("generator_type", "")))
 					var rem_sec = int(gen.get("remaining_active_seconds", 21600))
 					var dur = float(gen.get("durability", 100.0))
@@ -1328,8 +1296,6 @@ func _create_inventory_drawer() -> void:
 	p_st.border_color = Color(0.25, 0.55, 0.85, 0.9)
 	p_st.border_width_left = 2; p_st.border_width_top = 2; p_st.border_width_bottom = 2
 	p_st.corner_radius_top_left = 10; p_st.corner_radius_bottom_left = 10
-	p_st.shadow_color = Color(0.1, 0.45, 0.8, 0.3)
-	p_st.shadow_size = 12
 	panel.add_theme_stylebox_override("panel", p_st)
 
 	var margin := MarginContainer.new()
@@ -1387,17 +1353,6 @@ func _create_inventory_drawer() -> void:
 	inv_tab_btn.custom_minimum_size = Vector2(34, 60)
 	inv_tab_btn.size = Vector2(34, 60)
 	inv_tab_btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-
-	var tab_st := StyleBoxFlat.new()
-	tab_st.bg_color = Color(0.08, 0.12, 0.18, 0.96)
-	tab_st.border_color = Color(0.35, 0.88, 1.0, 1.0)
-	tab_st.border_width_left = 2; tab_st.border_width_top = 2; tab_st.border_width_bottom = 2
-	tab_st.corner_radius_top_left = 8; tab_st.corner_radius_bottom_left = 8
-	tab_st.shadow_color = Color(0.15, 0.6, 0.9, 0.4); tab_st.shadow_size = 8
-	inv_tab_btn.add_theme_stylebox_override("normal", tab_st)
-	inv_tab_btn.add_theme_stylebox_override("hover", tab_st)
-	inv_tab_btn.add_theme_color_override("font_color", Color(0.35, 0.88, 1.0))
-	inv_tab_btn.add_theme_font_size_override("font_size", 15)
 	inv_tab_btn.pressed.connect(_toggle_inventory_drawer)
 
 	inv_root.add_child(inv_tab_btn)

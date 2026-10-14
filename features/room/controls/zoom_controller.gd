@@ -48,7 +48,7 @@ func _setup_hud() -> void:
 func _input(event: InputEvent) -> void:
 	var vp_size: Vector2 = get_viewport().get_visible_rect().size
 
-	# 1. TECLAS '+' Y '-' EN PC (Se quitó la rueda del ratón para no trabar el scroll)
+	# 1. ZOOM EN PC: SOLO CON TECLAS '+' Y '-' (RUEDA DEL RATÓN LIBERADA PARA SCROLL)
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode in [KEY_PLUS, KEY_KP_ADD, KEY_EQUAL]:
 			_step_zoom(1.20, vp_size / 2.0)
@@ -62,7 +62,7 @@ func _input(event: InputEvent) -> void:
 			reset_zoom(true)
 			return
 
-	# 2. CELULAR: PINCH TO ZOOM CON 2 DEDOS (NO INTERCEPTA 1 DEDO PARA PERMITIR SCROLL FLUIDO)
+	# 2. CELULAR: PINCH CON 2 DEDOS (NO INTERCEPTA 1 DEDO PARA QUE EL SCROLL NO SE TRABE)
 	if event is InputEventScreenTouch:
 		if event.pressed:
 			touch_points[event.index] = event.position
@@ -91,7 +91,6 @@ func _input(event: InputEvent) -> void:
 			_clamp_pan(vp_size)
 			_apply_transform()
 			get_viewport().set_input_as_handled()
-		# Si es 1 dedo y no hay zoom, se deja pasar libre para que todos los scrolls funcionen fluidos sin trabarse
 
 func _start_pinch() -> void:
 	is_pinching = true
